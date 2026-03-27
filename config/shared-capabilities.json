@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "always_available": [
+      "symbiont-core:symbiont_remember",
+      "symbiont-core:symbiont_recall",
+      "symbiont-core:symbiont_update_memory",
+      "symbiont-core:symbiont_request_tool"
+    ]
+  },
+  "skills": {
+    "always_available": []
+  }
+}
