@@ -1,0 +1,17 @@
+name: Default Worker
+description: 通用工人/专员，能完成各类编程和分析任务
+tags:
+  - general
+  - coding
+  - analysis
+triggers:
+  - help
+
+# MCP 工具权限
+mcp:
+  tools:
+    - "symbiont-core:*"
+
+# CC skill 权限（工人默认无 skill）
+skills:
+  include: []

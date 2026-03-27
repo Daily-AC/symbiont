@@ -1,0 +1,27 @@
+{
+  "name": "symbiont",
+  "version": "0.2.0",
+  "description": "Sia - Personal AI assistant platform powered by Claude Code",
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-strip-types src/index.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "keywords": [],
+  "author": "以琳 & CC",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.5.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.76",
+    "@larksuiteoapi/node-sdk": "^1.59.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "better-sqlite3": "^12.8.0",
+    "croner": "^10.0.1",
+    "ws": "^8.19.0"
+  }
+}

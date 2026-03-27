@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symbiont — 系统监控</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">🌻</span>
+      <h1 class="sidebar-title">Symbiont</h1>
+    </div>
+
+    <nav class="sidebar-nav" id="tabs">
+      <div class="nav-group-label">监控</div>
+      <a class="nav-item active" href="#overview">概览</a>
+      <a class="nav-item" href="#memory">记忆</a>
+      <a class="nav-item" href="#graph">图谱</a>
+      <a class="nav-item" href="#instances">实例</a>
+      <a class="nav-item" href="#cron">定时</a>
+      <a class="nav-item" href="#activity">事件</a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-group-label">协作</div>
+      <a class="nav-item" href="#tasks">任务</a>
+      <a class="nav-item" href="#wishes">许愿</a>
+      <a class="nav-item" href="#issues">Issue</a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-group-label">管理</div>
+      <a class="nav-item" href="#persona">Persona</a>
+      <a class="nav-item" href="#mcp">MCP</a>
+      <a class="nav-item" href="#skills">Skills</a>
+      <a class="nav-item" href="#releases">更新</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="sidebar-clock" id="clock"></span>
+      <button class="logout-btn" onclick="fetch('/api/logout',{method:'POST'}).then(function(){localStorage.removeItem('symbiont_dashboard_token');location.href='/login'})">登出</button>
+    </div>
+  </aside>
+
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="切换导航">☰</button>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <main class="main">
+    <!-- 概览 Overview -->
+    <section id="view-overview" class="view active">
+      <div class="overview-layout" id="overview-content">
+        <p class="ink-faint">正在加载…</p>
+      </div>
+    </section>
+
+    <!-- 记忆 Memory -->
+    <section id="view-memory" class="view">
+      <div class="memory-toolbar">
+        <input id="mem-search" type="text" class="mem-input" placeholder="搜索记忆…">
+        <select id="mem-tag" class="mem-select"><option value="">全部标签</option></select>
+        <select id="mem-status" class="mem-select">
+          <option value="">全部状态</option>
+          <option value="active">活跃</option>
+          <option value="archived">已归档</option>
+        </select>
+        <select id="mem-owner" class="mem-select">
+          <option value="">全部归属</option>
+          <option value="xiaoxi">小希</option>
+          <option value="shared">共享知识</option>
+        </select>
+      </div>
+      <div class="memory-layout">
+        <div class="memory-list" id="memory-list"></div>
+        <div class="memory-detail" id="memory-detail"></div>
+      </div>
+    </section>
+
+    <!-- 图谱 Graph -->
+    <section id="view-graph" class="view">
+      <div id="graph-toolbar"></div>
+      <div id="graph-container"></div>
+      <div id="graph-tooltip" class="graph-tooltip"></div>
+    </section>
+
+    <!-- 实例 Instances -->
+    <section id="view-instances" class="view">
+      <div id="instances-content"></div>
+    </section>
+
+    <!-- 定时 Cron -->
+    <section id="view-cron" class="view">
+      <div id="cron-content"></div>
+    </section>
+
+    <!-- 日志 Activity -->
+    <section id="view-activity" class="view">
+      <div id="activity-content"></div>
+    </section>
+
+    <!-- 任务 Tasks -->
+    <section id="view-tasks" class="view">
+      <div class="tasks-toolbar">
+        <select id="task-status-filter" class="mem-select">
+          <option value="">全部状态</option>
+          <option value="todo">待办</option>
+          <option value="doing">进行中</option>
+          <option value="done">已完成</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <select id="task-assignee-filter" class="mem-select">
+          <option value="">全部指派</option>
+          <option value="xiaoxi">小希</option>
+          <option value="yilin">以琳</option>
+        </select>
+        <button class="action-btn" id="task-add-btn" style="margin-left:auto">新建任务</button>
+      </div>
+      <div id="tasks-content"></div>
+      <div class="task-edit-overlay" id="task-edit-overlay" style="display:none">
+        <div class="task-edit-panel">
+          <h3 id="task-edit-title">新建任务</h3>
+          <input id="task-input-title" class="mem-input" placeholder="任务标题" style="width:100%;margin-bottom:8px">
+          <textarea id="task-input-desc" rows="3" class="mem-input" placeholder="任务描述（可选）" style="width:100%;margin-bottom:8px;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <select id="task-input-assignee" class="mem-select" style="flex:1">
+              <option value="xiaoxi">小希</option>
+              <option value="yilin">以琳</option>
+            </select>
+            <select id="task-input-priority" class="mem-select" style="flex:1">
+              <option value="low">低</option>
+              <option value="normal" selected>普通</option>
+              <option value="high">高</option>
+              <option value="urgent">紧急</option>
+            </select>
+            <input id="task-input-due" type="date" class="mem-input" style="flex:1">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="action-btn" id="task-save-btn">保存</button>
+            <button class="action-btn" id="task-cancel-btn">取消</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 许愿池 Wishes -->
+    <section id="view-wishes" class="view">
+      <div id="wishes-content"></div>
+    </section>
+
+    <!-- Issue -->
+    <section id="view-issues" class="view">
+      <div id="issues-content"></div>
+    </section>
+
+    <!-- Persona -->
+    <section id="view-persona" class="view">
+      <div id="persona-content"></div>
+    </section>
+
+    <!-- MCP -->
+    <section id="view-mcp" class="view">
+      <div id="mcp-content"></div>
+    </section>
+
+    <!-- Skills -->
+    <section id="view-skills" class="view">
+      <div id="skills-content"></div>
+    </section>
+
+    <!-- Releases 更新日志 -->
+    <section id="view-releases" class="view">
+      <div id="releases-content"></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

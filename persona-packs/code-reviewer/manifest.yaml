@@ -1,0 +1,26 @@
+name: Code Reviewer
+description: 专注代码审查、质量把关、最佳实践建议
+tags:
+  - code-review
+  - quality
+  - testing
+  - pr
+  - lint
+triggers:
+  - review
+  - code quality
+  - PR
+emoji: "🔍"
+
+# MCP 工具权限
+mcp:
+  tools:
+    - "symbiont-core:symbiont_remember"
+    - "symbiont-core:symbiont_recall"
+    - "symbiont-core:symbiont_report_issue"
+
+# CC skill 权限
+skills:
+  include:
+    - code-review
+    - security-audit

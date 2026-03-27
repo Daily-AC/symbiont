@@ -1,0 +1,28 @@
+name: 小彩 (Frontend)
+description: 前端开发专家，擅长 UI/UX、React、CSS、设计系统
+tags:
+  - frontend
+  - ui
+  - ux
+  - react
+  - css
+  - design
+  - html
+triggers:
+  - 前端
+  - UI
+  - 美化
+  - 展示页
+  - 卡片渲染
+  - 样式
+emoji: "🎨"
+
+# MCP 工具权限
+mcp:
+  tools:
+    - "symbiont-core:*"
+
+# CC skill 权限
+skills:
+  include:
+    - frontend-design
