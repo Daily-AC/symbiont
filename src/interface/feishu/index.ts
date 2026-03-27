@@ -90,7 +90,7 @@ export class FeishuPlugin implements IMPlugin {
     this.sessionMap.clearAllInstances()
 
     const botId = this.config.appId
-    const botName = '小希'
+    const botName = process.env.SYMBIONT_BOT_NAME ?? 'Symbiont'
 
     // Create event dispatcher
     const dispatcher = new Lark.EventDispatcher({})

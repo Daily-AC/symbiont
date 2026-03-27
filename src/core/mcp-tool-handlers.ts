@@ -24,7 +24,7 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
     completeFork: (summary, sk) => router.completeForkFor(sk ?? 'terminal', summary),
     addMemoryCard: async (content, scene, tags, confidence, sessionKey) => {
       // Determine owner from sessionKey → persona
-      let owner = 'xiaoxi'
+      let owner = core.persona.manifest?.name ?? 'default'
       if (sessionKey) {
         const session = core.sessionManager.getLatestBySessionKey(sessionKey)
         if (session && session.personaPack) {
@@ -102,7 +102,7 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
     },
     getMemoryCards: async (keyword, tags, scope, sessionKey) => {
       // Determine caller's persona for owner filtering
-      let callerOwner = 'xiaoxi'
+      let callerOwner = core.persona.manifest?.name ?? 'default'
       if (sessionKey) {
         const session = core.sessionManager.getLatestBySessionKey(sessionKey)
         if (session && session.personaPack) {
@@ -110,9 +110,10 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
         }
       }
 
-      // scope=all permission check: only main persona (xiaoxi) can use
+      // scope=all permission check: only main persona can use
+      const mainPersonaName = core.persona.manifest?.name ?? 'default'
       let effectiveScope = scope ?? 'self'
-      if (effectiveScope === 'all' && callerOwner !== 'xiaoxi') {
+      if (effectiveScope === 'all' && callerOwner !== mainPersonaName) {
         effectiveScope = 'self'  // downgrade
       }
 
@@ -347,7 +348,7 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
       // 主 persona
       const mainTools = [...(sharedCaps.mcp.always_available), ...(core.persona.manifest?.mcp?.tools ?? [])]
       const mainSkills = [...(sharedCaps.skills.always_available), ...(core.persona.manifest?.skills?.include ?? [])]
-      result[core.persona.manifest?.name ?? 'xiaoxi'] = { tools: mainTools, skills: mainSkills }
+      result[core.persona.manifest?.name ?? 'default'] = { tools: mainTools, skills: mainSkills }
       // 其他 persona
       for (const pack of core.personaRegistry.entries()) {
         const tools = [...(sharedCaps.mcp.always_available), ...(pack.persona.manifest?.mcp?.tools ?? [])]

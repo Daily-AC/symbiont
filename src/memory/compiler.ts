@@ -5,7 +5,7 @@ import type { MemoryDB } from './db.ts'
 export interface CompilerDeps {
   db: MemoryDB
   logger: { info: (mod: string, event: string, meta?: any) => void; error: (mod: string, event: string, meta?: any) => void }
-  personaDir: string       // e.g., /root/symbiont/persona-xiaoxi
+  personaDir: string       // e.g., /root/symbiont/persona-example
   ccMemoryDir: string      // e.g., ~/.claude/projects/.../memory
   personaPacksDir: string  // e.g., /root/symbiont/persona-packs
 }
@@ -76,7 +76,7 @@ export class Compiler {
 
     // Find or create the "编译知识" section
     const sectionHeader = '## 编译知识'
-    const sectionComment = '<!-- 以下内容由 symbiont_compile 自动写入，小希反思后沉淀的规律 -->'
+    const sectionComment = '<!-- Auto-written by symbiont_compile — patterns distilled from reflection -->'
 
     if (current.includes(sectionHeader)) {
       // Append to existing section
@@ -114,7 +114,7 @@ export class Compiler {
     } else {
       const header = `---
 name: compiled-knowledge
-description: 小希反思沉淀的长期知识，由 symbiont_compile 自动写入
+description: Long-term knowledge from reflection, auto-written by symbiont_compile
 type: project
 ---
 
@@ -156,7 +156,7 @@ type: project
     const relativePath = newFilePath.replace(memoryDir + '/', '')
 
     if (!index.includes(relativePath)) {
-      const entry = `\n- [compiled-knowledge](${relativePath}) — 小希反思沉淀的长期知识\n`
+      const entry = `\n- [compiled-knowledge](${relativePath}) — Long-term knowledge from reflection\n`
       writeFileSync(indexPath, index.trimEnd() + entry, 'utf8')
     }
   }
