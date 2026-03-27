@@ -13,8 +13,8 @@ export async function startTerminal(router: Router): Promise<void> {
 
   console.log('')
   console.log('\x1b[35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m')
-  console.log('\x1b[35m  Symbiont v0.2 — 小希在线\x1b[0m')
-  console.log('\x1b[35m  输入消息跟小希聊天\x1b[0m')
+  console.log('\x1b[35m  Symbiont — online\x1b[0m')
+  console.log('\x1b[35m  Type a message to chat\x1b[0m')
   console.log('\x1b[35m  /fork <任务>  分叉专员  /done <摘要> 完成分叉\x1b[0m')
   console.log('\x1b[35m  /back 回主Agent  /forks 查看分叉\x1b[0m')
   console.log('\x1b[35m  /worker <任务>  派工人  /timeline 时间线\x1b[0m')
@@ -23,13 +23,13 @@ export async function startTerminal(router: Router): Promise<void> {
   console.log('')
 
   const askQuestion = (): void => {
-    rl.question('\x1b[32m以琳:\x1b[0m ', async (input) => {
+    rl.question('\x1b[32mYou:\x1b[0m ', async (input) => {
       const trimmed = input.trim()
       if (!trimmed) { askQuestion(); return }
 
       // 退出
       if (trimmed === '/quit' || trimmed === '/exit') {
-        console.log('\n\x1b[36m小希: 下次再见，以琳~\x1b[0m\n')
+        console.log('\n\x1b[36mAI: See you next time!\x1b[0m\n')
         await router.stop()
         rl.close()
         process.exit(0)
@@ -104,7 +104,7 @@ export async function startTerminal(router: Router): Promise<void> {
 
       // 普通消息
       const session = router.getSession(T)
-      const label = session?.activeForkId ? '专员' : '小希'
+      const label = session?.activeForkId ? '专员' : 'AI'
       console.log(`\x1b[33m[${label}思考中...]\x1b[0m`)
       const result = await router.sendTo(T, trimmed)
       console.log(`\n\x1b[36m${label}:\x1b[0m ${result}\n`)

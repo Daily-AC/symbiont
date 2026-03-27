@@ -35,7 +35,7 @@ export function handleCronTrigger(core: SymbiontCore, job: CronJob, runId: strin
   } else {
     // cc 执行器：通过 DM session 注入 prompt，结果推送到群聊
     const CC_CRON_TIMEOUT = 3 * 60 * 1000 // 3 minutes
-    const CRON_NOTIFY_CHAT_ID = process.env.SYMBIONT_CRON_CHAT_ID ?? 'oc_ffee250cd527431a3eb87a6a7e88d24b'
+    const CRON_NOTIFY_CHAT_ID = process.env.SYMBIONT_CRON_CHAT_ID
     const dmSessionKey = core.findDmSessionKey()
     if (dmSessionKey && core.router) {
       const systemEvent = `【系统事件】定时任务「${job.name}」触发。${job.prompt ?? ''}\n请处理并回复结果。`
@@ -43,9 +43,11 @@ export function handleCronTrigger(core: SymbiontCore, job: CronJob, runId: strin
       withTimeout(core.router.sendTo(dmSessionKey, systemEvent), CC_CRON_TIMEOUT, `cron-cc:${job.name}`).then(async result => {
         core.cronScheduler.completeRun(runId, true, result.slice(0, 500))
         // 定时任务结果推送到群聊（不是 DM）
-        try {
-          await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `📋 定时任务「${job.name}」\n\n${result}`)
-        } catch { /* 推送失败不影响任务完成 */ }
+        if (CRON_NOTIFY_CHAT_ID) {
+          try {
+            await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `📋 定时任务「${job.name}」\n\n${result}`)
+          } catch { /* 推送失败不影响任务完成 */ }
+        }
         if ((job as any)._oneShot) {
           core.cronScheduler.removeJob(job.id)
           core.logger.info('cron', 'oneshot-removed', { id: job.id, name: job.name })
@@ -53,7 +55,7 @@ export function handleCronTrigger(core: SymbiontCore, job: CronJob, runId: strin
       }).catch(async err => {
         core.logger.error('cron', 'cc-exec-failed', { jobId: job.id, name: job.name, error: (err as Error).message })
         core.cronScheduler.completeRun(runId, false, (err as Error).message)
-        try { await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `❌ 定时任务失败「${job.name}」\n\n${(err as Error).message}`) } catch { /* ignore */ }
+        if (CRON_NOTIFY_CHAT_ID) { try { await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `❌ 定时任务失败「${job.name}」\n\n${(err as Error).message}`) } catch { /* ignore */ } }
       })
     } else {
       // 没有 DM session → 派 worker 执行，结果发到群聊
@@ -68,19 +70,23 @@ export function handleCronTrigger(core: SymbiontCore, job: CronJob, runId: strin
           core.logger.info('cron', 'oneshot-removed', { id: job.id, name: job.name })
         }
         // 将结果发送到群聊
-        try {
-          await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `【定时任务】${job.name}\n\n${result.result.slice(0, 2000)}`)
-        } catch (err) {
-          core.logger.warn('cron', 'notify-chat-failed', { jobId: job.id, error: String(err) })
+        if (CRON_NOTIFY_CHAT_ID) {
+          try {
+            await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `【定时任务】${job.name}\n\n${result.result.slice(0, 2000)}`)
+          } catch (err) {
+            core.logger.warn('cron', 'notify-chat-failed', { jobId: job.id, error: String(err) })
+          }
         }
       }).catch(async (err) => {
         core.logger.error('cron', 'cc-exec-failed', { jobId: job.id, name: job.name, error: (err as Error).message })
         core.cronScheduler.completeRun(runId, false, (err as Error).message)
         // 失败也通知群聊
-        try {
-          await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `【定时任务失败】${job.name}\n\n${(err as Error).message}`)
-        } catch (notifyErr) {
-          core.logger.warn('cron', 'notify-chat-failed', { jobId: job.id, error: String(notifyErr) })
+        if (CRON_NOTIFY_CHAT_ID) {
+          try {
+            await core.sendFeishuNotification(CRON_NOTIFY_CHAT_ID, `【定时任务失败】${job.name}\n\n${(err as Error).message}`)
+          } catch (notifyErr) {
+            core.logger.warn('cron', 'notify-chat-failed', { jobId: job.id, error: String(notifyErr) })
+          }
         }
       })
     }
@@ -88,7 +94,7 @@ export function handleCronTrigger(core: SymbiontCore, job: CronJob, runId: strin
 }
 
 /**
- * 认知闭环：scan → 派工人聚合 → 小希 review → 自动审批。
+ * 认知闭环：scan → 派工人聚合 → review → 自动审批。
  *
  * 流程：
  * 1. scan 找到候选标签（≥5 张同标签卡片）
@@ -120,7 +126,7 @@ export function runCognitionCycle(core: SymbiontCore, runId: string): void {
     const genResult = await core.workerManager.dispatch({
       id: `cognition-gen-${tag}-${Date.now()}`,
       description: [
-        `你是小希的认知聚合助手。以下是标签「${tag}」下的 ${cards.length} 条经验卡片：`,
+        `你是认知聚合助手。以下是标签「${tag}」下的 ${cards.length} 条经验卡片：`,
         '', cardSummary, '',
         `请从这些经验中提炼出一条跨场景的认知规律（Pattern）。`,
         `要求：简洁、可操作、不是鸡汤。一句话总结规律，再用 1-2 句解释为什么。`,
@@ -145,7 +151,7 @@ export function runCognitionCycle(core: SymbiontCore, runId: string): void {
     const reviewResult = await core.workerManager.dispatch({
       id: `cognition-review-${tag}-${Date.now()}`,
       description: [
-        `你是小希的认知审查助手。请评估以下认知总结的质量：`,
+        `你是认知审查助手。请评估以下认知总结的质量：`,
         '', `标签：${tag}`,
         `总结：${genResult.result}`,
         `来源卡片数：${cards.length}`,

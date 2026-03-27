@@ -610,7 +610,7 @@
         (c.scene ? '<span class="card-scene">' + escHtml(c.scene) + '</span>' : '') +
         (c.tags || []).map(function (t) { return '<span class="card-tag">' + escHtml(t) + '</span>' }).join('') +
         '<span class="card-time">' + relativeTime(c.createdAt || c.created_at) + '</span>' +
-        (c.owner ? '<span class="card-owner">' + escHtml(c.owner === 'xiaoxi' ? '小希' : c.owner === 'shared' ? '共享' : c.owner) + '</span>' : '') +
+        (c.owner ? '<span class="card-owner">' + escHtml(c.owner === 'shared' ? 'Shared' : c.owner) + '</span>' : '') +
         '</div>' +
         '</div>' +
         '<div class="card-right">' +
@@ -655,7 +655,7 @@
     var cur = ownerEl.value
     var opts = '<option value="">全部归属</option>'
     Array.from(owners).sort().forEach(function (o) {
-      var label = o === 'xiaoxi' ? '小希' : o === 'shared' ? '共享知识' : o
+      var label = o === 'shared' ? 'Shared' : o
       opts += '<option value="' + escAttr(o) + '">' + escHtml(label) + '</option>'
     })
     ownerEl.innerHTML = opts
@@ -1719,7 +1719,7 @@
     if (t.status === 'cancelled') titleClass += ' cancelled'
 
     var priorityLabels = { urgent: '紧急', high: '高', normal: '普通', low: '低' }
-    var assigneeLabels = { xiaoxi: '小希', yilin: '以琳' }
+    var assigneeLabels = {}
 
     // Check if overdue
     var isOverdue = false
@@ -1745,7 +1745,7 @@
     html += '<div class="task-meta">'
     html += '<span class="task-priority ' + (t.priority || 'normal') + '">' +
       (priorityLabels[t.priority] || t.priority || '普通') + '</span>'
-    html += '<span class="task-assignee">' + escHtml(assigneeLabels[t.assignee] || t.assignee || '小希') + '</span>'
+    html += '<span class="task-assignee">' + escHtml(assigneeLabels[t.assignee] || t.assignee || 'default') + '</span>'
     if (t.due_date) {
       html += '<span class="task-due' + (isOverdue ? ' overdue' : '') + '">'
       html += (isOverdue ? '已过期 ' : '截止 ') + escHtml(t.due_date)
@@ -1818,7 +1818,7 @@
     document.getElementById('task-edit-title').textContent = taskId ? '编辑任务' : '新建任务'
     document.getElementById('task-input-title').value = ''
     document.getElementById('task-input-desc').value = ''
-    document.getElementById('task-input-assignee').value = 'xiaoxi'
+    document.getElementById('task-input-assignee').value = ''
     document.getElementById('task-input-priority').value = 'normal'
     document.getElementById('task-input-due').value = ''
 
@@ -1830,7 +1830,7 @@
         if (!t) return
         document.getElementById('task-input-title').value = t.title || ''
         document.getElementById('task-input-desc').value = t.description || ''
-        document.getElementById('task-input-assignee').value = t.assignee || 'xiaoxi'
+        document.getElementById('task-input-assignee').value = t.assignee || ''
         document.getElementById('task-input-priority').value = t.priority || 'normal'
         document.getElementById('task-input-due').value = t.due_date ? t.due_date.slice(0, 10) : ''
       })
@@ -1863,7 +1863,7 @@
         loadTasks()
       })
     } else {
-      data.created_by = 'yilin'
+      data.created_by = 'user'
       api('/api/tasks', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -2133,7 +2133,7 @@
     row += '<div class="issue-meta">'
     row += '<span class="issue-severity ' + (i.severity || 'normal') + '">' + (severityLabels[i.severity] || '普通') + '</span>'
     row += '<span class="issue-status ' + (i.status || 'open') + '">' + (statusLabels[i.status] || i.status) + '</span>'
-    row += '<span class="issue-created-by">' + escHtml(i.created_by || 'xiaoxi') + '</span>'
+    row += '<span class="issue-created-by">' + escHtml(i.created_by || 'default') + '</span>'
     row += '<span class="issue-time">' + relativeTime(i.created_at) + '</span>'
     row += '</div>'
     if (i.resolution) {

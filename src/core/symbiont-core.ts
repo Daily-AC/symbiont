@@ -231,13 +231,13 @@ export class SymbiontCore {
           return { role: 'user', persona: siaSession.personaPack }
         }
         // Session 未创建时（CC 刚连接 Gateway），默认用主 persona 的权限
-        return { role: 'main', persona: this.persona.manifest?.name ?? 'xiaoxi' }
+        return { role: 'main', persona: this.persona.manifest?.name ?? 'default' }
       },
       getToolWhitelist: (persona: string) => {
         const pack = this.personaRegistry.get(persona)
         if (pack) return pack.persona.manifest?.mcp?.tools ?? []
         // 主角色用自己的配置
-        if (persona === (this.persona.manifest?.name ?? 'xiaoxi')) {
+        if (persona === (this.persona.manifest?.name ?? 'default')) {
           return this.persona.manifest?.mcp?.tools ?? []
         }
         // 未知 persona → 空白名单（只有 shared 工具可用）

@@ -71,8 +71,7 @@
         </select>
         <select id="mem-owner" class="mem-select">
           <option value="">全部归属</option>
-          <option value="xiaoxi">小希</option>
-          <option value="shared">共享知识</option>
+          <option value="shared">Shared</option>
         </select>
       </div>
       <div class="memory-layout">
@@ -115,8 +114,6 @@
         </select>
         <select id="task-assignee-filter" class="mem-select">
           <option value="">全部指派</option>
-          <option value="xiaoxi">小希</option>
-          <option value="yilin">以琳</option>
         </select>
         <button class="action-btn" id="task-add-btn" style="margin-left:auto">新建任务</button>
       </div>
@@ -127,10 +124,7 @@
           <input id="task-input-title" class="mem-input" placeholder="任务标题" style="width:100%;margin-bottom:8px">
           <textarea id="task-input-desc" rows="3" class="mem-input" placeholder="任务描述（可选）" style="width:100%;margin-bottom:8px;resize:vertical"></textarea>
           <div style="display:flex;gap:8px;margin-bottom:8px">
-            <select id="task-input-assignee" class="mem-select" style="flex:1">
-              <option value="xiaoxi">小希</option>
-              <option value="yilin">以琳</option>
-            </select>
+            <input id="task-input-assignee" class="mem-input" style="flex:1" placeholder="Assignee (optional)">
             <select id="task-input-priority" class="mem-select" style="flex:1">
               <option value="low">低</option>
               <option value="normal" selected>普通</option>

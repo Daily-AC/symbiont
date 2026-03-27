@@ -71,7 +71,7 @@ export class WorkerManager {
 
       // 注册 worker session 到 sessionManager，这样 Gateway 能通过 sessionKey 识别 persona
       if (this.sessionManager) {
-        const personaName = task.persona ?? this.persona.manifest?.name ?? 'xiaoxi'
+        const personaName = task.persona ?? this.persona.manifest?.name ?? 'default'
         this.sessionManager.create(personaName, workerSessionId)
       }
 

@@ -10,7 +10,7 @@ export interface ExperienceCard {
   connections: string[]  // kept for backward compat, graph lives in connections table
   archived?: boolean
   essence?: string       // distilled knowledge when archived
-  owner: string          // persona name, default 'xiaoxi'; 'shared' for shared knowledge base
+  owner: string          // persona name, default 'default'; 'shared' for shared knowledge base
 }
 
 export interface Connection {

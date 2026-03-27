@@ -187,7 +187,7 @@ const toolDefinitions = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        name: { type: 'string', description: '任务名称（如"叫以琳起床"）' },
+        name: { type: 'string', description: '任务名称（如"send a reminder"）' },
         schedule: { type: 'string', description: '标准 cron 表达式（如 "0 8 * * *" = 每天 8 点，"*/30 * * * *" = 每 30 分钟）' },
         prompt: { type: 'string', description: '触发时执行的 prompt（发给你自己处理）' },
         timezone: { type: 'string', description: '时区，默认 Asia/Shanghai' },
@@ -276,7 +276,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_wish',
-    description: '许愿池：向以琳许一个愿望（功能请求、想要的改进、希望学会的东西等）。愿望会出现在监控看板上，等待以琳批准或拒绝。',
+    description: 'Make a wish (feature request, improvement, etc.). Wishes appear on the dashboard, awaiting approval or rejection.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -318,7 +318,7 @@ const toolDefinitions = [
       properties: {
         title: { type: 'string', description: '任务标题' },
         description: { type: 'string', description: '任务详细描述（可选）' },
-        assignee: { type: 'string', enum: ['xiaoxi', 'yilin'], description: '指派给谁（默认 xiaoxi）' },
+        assignee: { type: 'string', description: '指派给谁（默认 default）' },
         priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'], description: '优先级（默认 normal）' },
         due_date: { type: 'string', description: '截止日期，ISO 格式如 2026-03-25（可选）' },
       },
@@ -348,13 +348,13 @@ const toolDefinitions = [
       type: 'object' as const,
       properties: {
         status: { type: 'string', enum: ['todo', 'doing', 'done', 'cancelled'], description: '按状态过滤' },
-        assignee: { type: 'string', enum: ['xiaoxi', 'yilin'], description: '按指派人过滤' },
+        assignee: { type: 'string', description: '按指派人过滤' },
       },
     },
   },
   {
     name: 'symbiont_report_issue',
-    description: '报告问题：向以琳报告一个问题（bug、异常、需要关注的事项等）。问题会出现在监控看板的 Issue tab 上，等待以琳处理。',
+    description: 'Report an issue (bug, anomaly, items needing attention). Issues appear on the dashboard Issue tab, awaiting handling.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -486,7 +486,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_request_tool',
-    description: '向小希申请使用某个工具（工人/专员用）。申请会记录到许愿池，等待小希审批并 grant。',
+    description: 'Request access to a tool (for workers/specialists). The request is logged to the wish pool, awaiting approval and grant.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -498,7 +498,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_request_skill',
-    description: '向小希申请使用某个 Skill（工人/专员用）。申请会记录到许愿池，等待小希审批。',
+    description: 'Request access to a Skill (for workers/specialists). The request is logged to the wish pool, awaiting approval.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -802,7 +802,7 @@ export async function createSiaMcpServer(
             description: args?.description as string | undefined,
             severity: args?.severity as string | undefined,
             status: args?.status as string | undefined,
-            comment: commentText ? { author: 'xiaoxi', content: commentText } : undefined,
+            comment: commentText ? { author: 'system', content: commentText } : undefined,
           },
         )
         if (!updated) return Promise.resolve({ content: [{ type: 'text' as const, text: '问题不存在' }], isError: true as const })
@@ -866,14 +866,14 @@ export async function createSiaMcpServer(
           args?.tool_name as string,
           args?.reason as string,
         )
-        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交工具申请: ${result.title} (ID: ${result.id})。等待小希审批。` }] })
+        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交工具申请: ${result.title} (ID: ${result.id}). Awaiting approval.` }] })
       }
       case 'symbiont_request_skill': {
         const result = handler.requestSkill(
           args?.skill_name as string,
           args?.reason as string,
         )
-        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交 Skill 申请: ${result.title} (ID: ${result.id})。等待小希审批。` }] })
+        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交 Skill 申请: ${result.title} (ID: ${result.id}). Awaiting approval.` }] })
       }
       case 'symbiont_gateway_backends': {
         const backends = handler.listGatewayBackends()

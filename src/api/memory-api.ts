@@ -410,7 +410,7 @@ export async function handleMemoryAPI(req: IncomingMessage, res: ServerResponse,
   if (core && path === '/api/personas' && req.method === 'GET') {
     const personas: Array<Record<string, unknown>> = []
 
-    // 主 persona (xiaoxi)
+    // Main persona
     const mainManifest = core.persona.manifest
     if (mainManifest) {
       personas.push({
@@ -563,7 +563,7 @@ export async function handleMemoryAPI(req: IncomingMessage, res: ServerResponse,
     const configDir = join(core.config.dataDir, '..', 'config')
     const sharedCaps = loadSharedCapabilities(configDir)
     const pack = core.personaRegistry.get(personaName)
-    const manifest = pack?.persona.manifest ?? (personaName === (core.persona.manifest?.name ?? 'xiaoxi') ? core.persona.manifest : null)
+    const manifest = pack?.persona.manifest ?? (personaName === (core.persona.manifest?.name ?? 'default') ? core.persona.manifest : null)
     if (!manifest) { res.writeHead(404); res.end('Persona not found'); return true }
     const tools = [...new Set([...sharedCaps.mcp.always_available, ...(manifest.mcp?.tools ?? [])])]
     const skills = [...new Set([...sharedCaps.skills.always_available, ...(manifest.skills?.include ?? [])])]

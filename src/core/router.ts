@@ -193,7 +193,7 @@ export class Router {
         recoveryPrompt,
       }, options?.description)
     } else {
-      const newSession = this.core.sessionManager.create(this.core.persona.manifest?.name ?? 'xiaoxi', sessionKey)
+      const newSession = this.core.sessionManager.create(this.core.persona.manifest?.name ?? 'default', sessionKey)
       symbiontSessionId = newSession.sessionId
       instance = await this.core.broker.getOrCreate(sessionKey, 'main', {
         cwd: workspaceDir,
@@ -555,7 +555,7 @@ export class Router {
   }
 
   /**
-   * 工人完成后，将结果注入主 CC 实例的对话流，让小希审核后推送。
+   * 工人完成后，将结果注入主 CC 实例的对话流，审核后推送给用户。
    */
   private async injectWorkerResult(sessionKey: string, task: WorkerTask, result: WorkerResult): Promise<void> {
     const session = this.sessions.get(sessionKey)
@@ -566,8 +566,8 @@ export class Router {
 
     const truncatedResult = result.result.slice(0, 2000)
     const prompt = result.success
-      ? `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 已完成，耗时 ${Math.round((result.duration ?? 0) / 1000)}秒。\n\n结果：\n${truncatedResult}\n\n请审核后总结发给以琳。`
-      : `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 失败。\n错误：${truncatedResult}\n\n请告知以琳。`
+      ? `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 已完成，耗时 ${Math.round((result.duration ?? 0) / 1000)}秒。\n\n结果：\n${truncatedResult}\n\nReview and send to user.`
+      : `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 失败。\n错误：${truncatedResult}\n\nPlease notify the user.`
 
     try {
       const { result: ccReply } = await this.core.broker.sendPrompt(session.instanceId, prompt)

@@ -86,7 +86,7 @@ export class MemoryDB {
 
     // Add owner column if not exists (persona memory isolation)
     if (!columns.some(c => c.name === 'owner')) {
-      this.db.exec("ALTER TABLE cards ADD COLUMN owner TEXT DEFAULT 'xiaoxi'")
+      this.db.exec("ALTER TABLE cards ADD COLUMN owner TEXT DEFAULT 'default'")
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_cards_owner ON cards(owner)')
     }
 
@@ -119,7 +119,7 @@ export class MemoryDB {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         description TEXT,
-        assignee TEXT DEFAULT 'xiaoxi',
+        assignee TEXT DEFAULT 'default',
         status TEXT DEFAULT 'todo',
         priority TEXT DEFAULT 'normal',
         due_date TEXT,
@@ -147,7 +147,7 @@ export class MemoryDB {
         severity TEXT DEFAULT 'normal',
         status TEXT DEFAULT 'open',
         resolution TEXT,
-        created_by TEXT DEFAULT 'xiaoxi',
+        created_by TEXT DEFAULT 'default',
         created_at TEXT NOT NULL,
         comments TEXT DEFAULT '[]'
       );
@@ -186,7 +186,7 @@ export class MemoryDB {
   addCard(card: Omit<ExperienceCard, 'id' | 'createdAt' | 'lastUsed'>, owner?: string, sessionId?: string): ExperienceCard {
     const now = new Date().toISOString()
     const id = `card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const cardOwner = owner ?? card.owner ?? 'xiaoxi'
+    const cardOwner = owner ?? card.owner ?? 'default'
     const full: ExperienceCard = {
       ...card,
       id,
@@ -247,7 +247,7 @@ export class MemoryDB {
     // Persona memory isolation: scope takes priority over owner
     if (query.scope === 'self') {
       conditions.push('c.owner = ?')
-      params.push(query.owner ?? 'xiaoxi')
+      params.push(query.owner ?? 'default')
     } else if (query.scope === 'shared') {
       conditions.push("c.owner = 'shared'")
     } else if (query.scope === 'all') {
@@ -526,7 +526,7 @@ export class MemoryDB {
       confidence: row.confidence, source: JSON.parse(row.source || '[]'),
       createdAt: row.created_at, lastUsed: row.last_used,
       tags, connections: [], archived: !!row.archived, essence: row.essence,
-      owner: row.owner ?? 'xiaoxi',
+      owner: row.owner ?? 'default',
     }
   }
 
@@ -627,7 +627,7 @@ export class MemoryDB {
   addTask(task: { title: string; description?: string; assignee?: string; priority?: string; due_date?: string; created_by?: string }): Task {
     const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const now = new Date().toISOString()
-    const assignee = task.assignee ?? 'xiaoxi'
+    const assignee = task.assignee ?? 'default'
     const priority = (task.priority ?? 'normal') as Task['priority']
     this.db.prepare(`
       INSERT INTO tasks (id, title, description, assignee, status, priority, due_date, created_by, created_at)
@@ -706,7 +706,7 @@ export class MemoryDB {
 
   // ---- Issues ----
 
-  addIssue(title: string, description?: string, severity: string = 'normal', created_by: string = 'xiaoxi'): Issue {
+  addIssue(title: string, description?: string, severity: string = 'normal', created_by: string = 'default'): Issue {
     const id = `issue-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     const now = new Date().toISOString()
     this.db.prepare(`
