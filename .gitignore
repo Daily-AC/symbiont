@@ -3,3 +3,6 @@ dist/
 data/
 persona-*/memory/
 !persona-*/memory/.gitkeep
+.env
+*.db
+*.db-journal
