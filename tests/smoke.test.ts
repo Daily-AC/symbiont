@@ -34,7 +34,7 @@ describe('Smoke: SymbiontCore 启动', () => {
   it('用测试配置初始化 SymbiontCore 不报错', () => {
     core = new SymbiontCore({
       dataDir: join(DATA_DIR, 'core1'),
-      personaPackDir: join(__dirname, '..', 'persona-xiaoxi'),
+      personaPackDir: join(__dirname, '..', 'persona-example'),
       userDir: join(__dirname, '..', 'user'),
     })
     assert.ok(core)
@@ -49,14 +49,14 @@ describe('Smoke: SymbiontCore 启动', () => {
 
   it('persona 已正确加载', () => {
     assert.ok(core.persona.manifest)
-    assert.equal(core.persona.manifest!.name, 'xiaoxi')
+    assert.equal(core.persona.manifest!.name, 'echo')
   })
 
   it('getSystemStatus 返回有效快照', () => {
     const status = core.getSystemStatus()
     assert.ok(status.uptime >= 0)
     assert.ok(typeof status.memoryMB === 'number')
-    assert.equal(status.persona, 'xiaoxi')
+    assert.equal(status.persona, 'echo')
   })
 
   after(async () => {
@@ -73,7 +73,7 @@ describe('Smoke: SessionManager 持久化', () => {
   it('创建 session → 重新加载后能恢复', () => {
     // 创建并写入
     const mgr1 = new SessionManager(sessDir)
-    const session = mgr1.create('xiaoxi', 'test-key')
+    const session = mgr1.create('echo', 'test-key')
     mgr1.updateCCSessionId(session.sessionId, 'cc-123')
 
     // 重新加载
@@ -81,13 +81,13 @@ describe('Smoke: SessionManager 持久化', () => {
     const reloaded = mgr2.get(session.sessionId)
     assert.ok(reloaded, '重新加载后应能找到 session')
     assert.equal(reloaded!.ccSessionId, 'cc-123')
-    assert.equal(reloaded!.personaPack, 'xiaoxi')
+    assert.equal(reloaded!.personaPack, 'echo')
     assert.equal(reloaded!.state, 'active')
   })
 
   it('sleep 后重新加载仍为 sleeping', () => {
     const mgr1 = new SessionManager(sessDir)
-    const session = mgr1.create('xiaoxi', 'sleep-key')
+    const session = mgr1.create('echo', 'sleep-key')
     mgr1.updateCCSessionId(session.sessionId, 'cc-sleep')
     mgr1.sleep(session.sessionId)
 
@@ -106,14 +106,14 @@ describe('Smoke: Router.stop() 优雅关闭', () => {
     const dataDir = join(DATA_DIR, 'router-stop')
     const core = new SymbiontCore({
       dataDir,
-      personaPackDir: join(__dirname, '..', 'persona-xiaoxi'),
+      personaPackDir: join(__dirname, '..', 'persona-example'),
       userDir: join(__dirname, '..', 'user'),
     })
 
     // 手动创建几个 session 来模拟 Router 的行为
-    const s1 = core.sessionManager.create('xiaoxi', 'key-1')
+    const s1 = core.sessionManager.create('echo', 'key-1')
     core.sessionManager.updateCCSessionId(s1.sessionId, 'cc-1')
-    const s2 = core.sessionManager.create('xiaoxi', 'key-2')
+    const s2 = core.sessionManager.create('echo', 'key-2')
     core.sessionManager.updateCCSessionId(s2.sessionId, 'cc-2')
 
     // 验证初始状态
@@ -141,13 +141,13 @@ describe('Smoke: 重启后 session 恢复', () => {
     // Phase 1: 创建并 sleep
     const core1 = new SymbiontCore({
       dataDir,
-      personaPackDir: join(__dirname, '..', 'persona-xiaoxi'),
+      personaPackDir: join(__dirname, '..', 'persona-example'),
       userDir: join(__dirname, '..', 'user'),
     })
 
-    const s1 = core1.sessionManager.create('xiaoxi', 'feishu')
+    const s1 = core1.sessionManager.create('echo', 'feishu')
     core1.sessionManager.updateCCSessionId(s1.sessionId, 'cc-feishu-1')
-    const s2 = core1.sessionManager.create('xiaoxi', 'terminal')
+    const s2 = core1.sessionManager.create('echo', 'terminal')
     core1.sessionManager.updateCCSessionId(s2.sessionId, 'cc-terminal-1')
 
     // 模拟 stop
@@ -158,7 +158,7 @@ describe('Smoke: 重启后 session 恢复', () => {
     // Phase 2: 重启 — 新建 SymbiontCore，验证 session 恢复
     const core2 = new SymbiontCore({
       dataDir,
-      personaPackDir: join(__dirname, '..', 'persona-xiaoxi'),
+      personaPackDir: join(__dirname, '..', 'persona-example'),
       userDir: join(__dirname, '..', 'user'),
     })
 

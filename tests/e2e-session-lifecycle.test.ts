@@ -18,7 +18,7 @@ import { Router } from '../src/core/router.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const TEST_DATA = join(__dirname, '..', 'data', '_test_session_lifecycle_' + Date.now())
-const personaDir = join(__dirname, '..', 'persona-xiaoxi')
+const personaDir = join(__dirname, '..', 'persona-example')
 const userDir = join(__dirname, '..', 'user')
 
 const sessionsFile = join(TEST_DATA, 'sessions', 'sessions.json')

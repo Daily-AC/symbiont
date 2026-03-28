@@ -545,7 +545,7 @@ const toolDefinitions = [
 /**
  * Symbiont MCP Server — 让主 Agent 的 CC 能自主调用 Symbiont Core 的功能。
  */
-export async function createSiaMcpServer(
+export async function createSymbiontMcpServer(
   handler: SiaMcpToolHandler,
   logger: Logger,
 ): Promise<McpHttpServerHandle> {

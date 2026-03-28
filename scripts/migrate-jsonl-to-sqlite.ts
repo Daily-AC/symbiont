@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-time migration: persona-xiaoxi/memory/cards.jsonl -> SQLite
+ * One-time migration: persona memory cards.jsonl -> SQLite
  * Run: node --experimental-strip-types scripts/migrate-jsonl-to-sqlite.ts
  */
 import { readFileSync, existsSync } from 'node:fs'
@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { MemoryDB } from '../src/memory/db.ts'
 
 const ROOT = join(import.meta.dirname, '..')
-const JSONL_PATH = join(ROOT, 'persona-xiaoxi', 'memory', 'cards.jsonl')
+const JSONL_PATH = join(ROOT, 'persona-example', 'memory', 'cards.jsonl')
 const DB_DIR = join(ROOT, 'data', 'memory-sqlite')
 
 if (!existsSync(JSONL_PATH)) {
