@@ -86,7 +86,7 @@ Persona Packs define the personality, knowledge, and behavior of your Symbiont i
 
 ```
 persona-packs/
-├── xiaoxi/              # Example: "小希" persona
+├── echo/                # Example: "Echo" persona
 │   ├── persona.json     # Identity, traits, speaking style
 │   ├── system.md        # System prompt template
 │   ├── memory-seeds/    # Initial memories and knowledge

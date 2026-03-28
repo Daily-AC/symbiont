@@ -16,7 +16,7 @@ export function createTestCore(suffix?: string): { core: SymbiontCore; dataDir: 
   const dataDir = mkdtempSync(join(tmpdir(), `symbiont-test-${suffix ?? ''}-`))
   const core = new SymbiontCore({
     dataDir,
-    personaPackDir: join(__dirname, '..', 'persona-xiaoxi'),
+    personaPackDir: join(__dirname, '..', 'persona-example'),
     userDir: join(__dirname, '..', 'user'),
   })
   return { core, dataDir }

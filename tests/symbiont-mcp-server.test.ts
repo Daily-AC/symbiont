@@ -275,7 +275,7 @@ describe('WorkspaceManager MCP URL with sessionKey', () => {
     const wm = new WorkspaceManager(tmpDir, createTestLogger())
     wm.registerMcp('symbiont-core', 'http://127.0.0.1:12345/mcp')
 
-    const persona = loadPersona(join(__dirname, '..', 'persona-xiaoxi'))
+    const persona = loadPersona(join(__dirname, '..', 'persona-example'))
     const user = loadUser(join(__dirname, '..', 'user'))
 
     // Ensure workspace with sessionKey
@@ -304,7 +304,7 @@ describe('WorkspaceManager MCP URL with sessionKey', () => {
     const wm = new WorkspaceManager(tmpDir, createTestLogger())
     wm.registerMcp('symbiont-core', 'http://127.0.0.1:12345/mcp')
 
-    const persona = loadPersona(join(__dirname, '..', 'persona-xiaoxi'))
+    const persona = loadPersona(join(__dirname, '..', 'persona-example'))
     const user = loadUser(join(__dirname, '..', 'user'))
 
     // sessionKey is still passed (it's always required in ensure), but verify the URL format

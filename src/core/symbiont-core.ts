@@ -13,7 +13,7 @@ import { CognitionEngine } from '../memory/cognition.ts'
 import { loadPersona, type PersonaConfig } from '../persona/loader.ts'
 import { loadUser, type UserProfile } from '../user/loader.ts'
 import { Logger } from './logger.ts'
-import { createSiaMcpServer, type SiaMcpServerHandle } from './symbiont-mcp-server.ts'
+import { createSymbiontMcpServer, type SiaMcpServerHandle } from './symbiont-mcp-server.ts'
 import { createToolHandlers } from './mcp-tool-handlers.ts'
 import { handleCronTrigger } from './cron-handler.ts'
 import { McpGateway } from './mcp-gateway.ts'
@@ -212,7 +212,7 @@ export class SymbiontCore {
   /** 启动 MCP Server，返回 URL 供注入到 workspace/.mcp.json */
   async startMcpServer(router: { dispatchWorker: Function; createForkFor: Function; completeForkFor: Function }): Promise<string> {
     const handler = createToolHandlers(this, router as any)
-    this.mcpServer = await createSiaMcpServer(handler, this.logger)
+    this.mcpServer = await createSymbiontMcpServer(handler, this.logger)
 
     // 创建 MCP Gateway 并注册 symbiont-core 后端
     const configDir = join(this.config.dataDir, '..', 'config')

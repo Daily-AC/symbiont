@@ -18,7 +18,7 @@ import { Router } from '../src/core/router.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const TEST_DATA = join(__dirname, '..', 'data', '_test_memory_' + Date.now())
-const personaDir = join(__dirname, '..', 'persona-xiaoxi')
+const personaDir = join(__dirname, '..', 'persona-example')
 const userDir = join(__dirname, '..', 'user')
 
 const T = Router.TERMINAL_KEY

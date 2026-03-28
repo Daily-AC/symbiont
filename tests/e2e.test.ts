@@ -279,13 +279,13 @@ describe('CardStore', () => {
 // 4. Persona Loader
 // ============================================================
 describe('Persona Loader', () => {
-  const packDir = join(__dirname, '..', 'persona-xiaoxi')
+  const packDir = join(__dirname, '..', 'persona-example')
 
   test('soul + voice merged into soulPrompt', () => {
     const persona = loadPersona(packDir)
-    assert.ok(persona.soulPrompt.includes('小希'))
-    assert.ok(persona.soulPrompt.includes('使命'))
-    assert.ok(persona.soulPrompt.includes('表达规范'))
+    assert.ok(persona.soulPrompt.includes('Echo'))
+    assert.ok(persona.soulPrompt.includes('companion'))
+    assert.ok(persona.soulPrompt.includes('Voice'))
   })
 
   test('persona is identity only — no skills or hands', () => {
@@ -298,14 +298,14 @@ describe('Persona Loader', () => {
   test('manifest is loaded with permissions', () => {
     const persona = loadPersona(packDir)
     assert.ok(persona.manifest)
-    assert.equal(persona.manifest!.name, 'xiaoxi')
+    assert.equal(persona.manifest!.name, 'echo')
     assert.ok(persona.manifest!.permissions.writable.length > 0)
     assert.ok(persona.manifest!.permissions.protected.length > 0)
   })
 
   test('memoryDir points to persona memory/', () => {
     const persona = loadPersona(packDir)
-    assert.ok(persona.memoryDir.endsWith('persona-xiaoxi/memory'))
+    assert.ok(persona.memoryDir.endsWith('persona-example/memory'))
   })
 })
 
@@ -491,7 +491,7 @@ describe('WorkerManager', () => {
 // ============================================================
 describe('Router - integration', () => {
   const dataDir = join(TEST_DATA, 'router')
-  const personaDir = join(__dirname, '..', 'persona-xiaoxi')
+  const personaDir = join(__dirname, '..', 'persona-example')
   let router: Router
 
   const userDir = join(__dirname, '..', 'user')

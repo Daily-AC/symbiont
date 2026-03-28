@@ -8,7 +8,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "keywords": [],
-  "author": "以琳 & CC",
+  "author": "",
   "license": "MIT",
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
