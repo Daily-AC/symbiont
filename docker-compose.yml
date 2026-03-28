@@ -1,0 +1,13 @@
+services:
+  symbiont:
+    build: .
+    container_name: symbiont
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "18080:18080"
+      - "18090:18090"
+    volumes:
+      - ./data:/app/data
+      - ./persona-example:/app/persona-example
+      - ./user:/app/user
