@@ -1,0 +1,19 @@
+name: echo
+version: "1.0.0"
+description: Echo — your AI companion
+
+permissions:
+  writable:
+    - voice/
+    - memory/
+  protected:
+    - soul/
+    - manifest.yaml
+
+mcp:
+  tools:
+    - "*"
+
+skills:
+  include:
+    - "*"
