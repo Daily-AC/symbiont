@@ -12,7 +12,7 @@ describe('EventStore (SQLite)', () => {
   let db: MemoryDB
 
   beforeEach(() => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'symbiont-robust-'))
+    const tempDir = mkdtempSync(join(tmpdir(), 'sia-robust-'))
     db = new MemoryDB(tempDir)
     store = new EventStore(db)
   })
@@ -77,7 +77,7 @@ describe('SessionMap cleanup', () => {
   let tempDir: string
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'symbiont-sessmap-'))
+    tempDir = mkdtempSync(join(tmpdir(), 'sia-sessmap-'))
   })
 
   it('should remove entries older than maxAgeDays', () => {

@@ -117,16 +117,16 @@ afterEach(async () => {
 
 describe('symbiont_cron_add', () => {
   it('should create a persistent cron job', () => {
-    const result = handler.cronAdd('叫以琳起床', '0 8 * * *', '叫以琳起床啦', { timezone: 'Asia/Shanghai' })
+    const result = handler.cronAdd('叫user起床', '0 8 * * *', '叫user起床啦', { timezone: 'Asia/Shanghai' })
 
     assert.ok(result.id, 'should return an id')
     assert.ok(result.id.startsWith('cron-'), 'id should have cron- prefix')
 
     const jobs = core.cronScheduler.listJobs()
     assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].name, '叫以琳起床')
+    assert.equal(jobs[0].name, '叫user起床')
     assert.equal(jobs[0].schedule, '0 8 * * *')
-    assert.equal(jobs[0].prompt, '叫以琳起床啦')
+    assert.equal(jobs[0].prompt, '叫user起床啦')
     assert.equal(jobs[0].enabled, true)
   })
 })
@@ -265,7 +265,7 @@ describe('createForkFor with explicit persona', () => {
 
 describe('feishu_send_message topic routing', () => {
   it('should use replyInThread for topic sessions with anchorMessageId', async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), 'symbiont-test-topic-routing-'))
+    const dataDir = mkdtempSync(join(tmpdir(), 'sia-test-topic-routing-'))
     const sessionMap = new SessionMap(dataDir)
 
     // Register a topic session with anchorMessageId
@@ -310,7 +310,7 @@ describe('feishu_send_message topic routing', () => {
   })
 
   it('should fall back to chatId when session_key is not in sessionMap', () => {
-    const dataDir = mkdtempSync(join(tmpdir(), 'symbiont-test-topic-fallback-'))
+    const dataDir = mkdtempSync(join(tmpdir(), 'sia-test-topic-fallback-'))
     const sessionMap = new SessionMap(dataDir)
 
     const unknownSk = 'oc_direct_chat_789'

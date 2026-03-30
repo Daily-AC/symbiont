@@ -23,7 +23,7 @@ describe('Router session recovery logic', () => {
   let eventStore: EventStore
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-test-'))
     sessionMgr = new SessionManager(dir)
     const db = new MemoryDB(join(dir, 'memory-sqlite'))
     eventStore = new EventStore(db)
@@ -49,7 +49,7 @@ describe('Router session recovery logic', () => {
       return {
         recovered: true,
         logType: 'session-recovered' as const,
-        symbiontSessionId: latestSession.sessionId,
+        siaSessionId: latestSession.sessionId,
         previousState: latestSession.state,
         brokerOptions: {
           sessionId: latestSession.ccSessionId ?? undefined,  // Bug 3: null → undefined
@@ -71,7 +71,7 @@ describe('Router session recovery logic', () => {
 
     const result = simulateRecovery('chat-1')
     assert.ok(result.recovered, 'sleeping session should be recovered')
-    assert.equal(result.symbiontSessionId, s.sessionId)
+    assert.equal(result.siaSessionId, s.sessionId)
     assert.equal(result.brokerOptions!.sessionId, 'cc-123')
   })
 
@@ -82,7 +82,7 @@ describe('Router session recovery logic', () => {
 
     const result = simulateRecovery('chat-1')
     assert.ok(result.recovered, 'active session should also be recovered')
-    assert.equal(result.symbiontSessionId, s.sessionId)
+    assert.equal(result.siaSessionId, s.sessionId)
     assert.equal(result.brokerOptions!.sessionId, 'cc-456')
   })
 
@@ -135,7 +135,7 @@ describe('Router session recovery logic', () => {
     // but getLatest returns the session because it has a ccSessionId
     const result = simulateRecovery('new-key')
     assert.ok(result.recovered)
-    assert.equal(result.symbiontSessionId, s.sessionId)
+    assert.equal(result.siaSessionId, s.sessionId)
   })
 
   // ---- Log type distinction: session-recovered vs session-created ----

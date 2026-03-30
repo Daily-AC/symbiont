@@ -40,7 +40,7 @@ if (!existingJobs.some(j => j.name === '心跳')) {
     name: '心跳', schedule: '0 */4 * * *',
     executor: 'cc',
     prompt: [
-      '你是心跳进程。请执行以下检查：',
+      '你是AI的心跳进程。请执行以下检查：',
       '1. 调用 symbiont_system_status 查看系统状态',
       '2. 如果有异常（实例卡死、内存过高），报告问题',
       '3. 调用 symbiont_recall 搜索最近的经验，看看有没有值得整理的',
@@ -103,12 +103,12 @@ if (feishuAppId && feishuAppSecret) {
   const { sendText: feishuSendText } = await import('./interface/feishu/send.ts')
   core.setFeishuSender(async (chatId, text) => { await feishuSendText(chatId, text) })
 
-  // Notify owner after startup (find most recently active p2p session from session-map)
+  // 启动完成后通知user（找到 session-map 里最近活跃的 p2p 会话）
   const ownerChatId = feishuPlugin.getSessionMap().getOwnerChatId()
   if (ownerChatId) {
     const { sendText } = await import('./interface/feishu/send.ts')
     const uptime = Math.round(process.uptime())
-    sendText(ownerChatId, `✅ Restarted successfully (${uptime}s)`).catch(() => {})
+    sendText(ownerChatId, `🌻 我重启好了（耗时 ${uptime}s）`).catch(() => {})
   }
 }
 

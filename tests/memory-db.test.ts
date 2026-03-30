@@ -11,7 +11,7 @@ describe('MemoryDB', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-memdb-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-memdb-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })

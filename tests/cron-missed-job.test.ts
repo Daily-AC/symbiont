@@ -7,7 +7,7 @@ import { CronScheduler } from '../src/core/cron-scheduler.ts'
 import { createTestLogger } from './helpers.ts'
 
 function makeDataDir(): string {
-  return mkdtempSync(join(tmpdir(), 'symbiont-cron-test-'))
+  return mkdtempSync(join(tmpdir(), 'sia-cron-test-'))
 }
 
 function makeJob(overrides: Record<string, unknown> = {}): Record<string, unknown> {

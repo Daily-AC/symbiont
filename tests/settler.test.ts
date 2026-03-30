@@ -21,7 +21,7 @@ describe('Settler', () => {
   let tmpDir: string
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-settler-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-settler-test-'))
     db = new MemoryDB(tmpDir)
   })
   after(() => { db.close(); rmSync(tmpDir, { recursive: true, force: true }) })

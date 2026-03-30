@@ -25,7 +25,7 @@ describe('buildCCArgs', () => {
 
     const mcpConfig = JSON.parse(mcpConfigStr)
     assert.ok(mcpConfig.mcpServers, 'should have mcpServers key')
-    assert.ok(mcpConfig.mcpServers['symbiont-core'], 'should have symbiont-core server')
+    assert.ok(mcpConfig.mcpServers['symbiont-core'], 'should have sia-core server')
     assert.strictEqual(mcpConfig.mcpServers['symbiont-core'].url, 'http://127.0.0.1:9999/mcp')
   })
 

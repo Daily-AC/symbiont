@@ -11,7 +11,7 @@ describe('Tasks', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-tasks-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-tasks-test-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
@@ -21,7 +21,7 @@ describe('Tasks', () => {
     assert.ok((task.id as string).startsWith('task-'))
     assert.equal(task.title, '修复飞书引用消息')
     assert.equal(task.status, 'todo')
-    assert.equal(task.assignee, 'xiaoxi')
+    assert.equal(task.assignee, 'default')
     assert.equal(task.priority, 'normal')
     assert.equal(task.completed_at, undefined)
   })
@@ -30,15 +30,15 @@ describe('Tasks', () => {
     const task = db.addTask({
       title: '交报告',
       description: '季度报告',
-      assignee: 'yilin',
+      assignee: 'user',
       priority: 'high',
       due_date: '2026-03-25',
-      created_by: 'xiaoxi',
+      created_by: 'default',
     })
-    assert.equal(task.assignee, 'yilin')
+    assert.equal(task.assignee, 'user')
     assert.equal(task.priority, 'high')
     assert.equal(task.due_date, '2026-03-25')
-    assert.equal(task.created_by, 'xiaoxi')
+    assert.equal(task.created_by, 'default')
   })
 
   test('updateTask changes status', () => {
@@ -86,9 +86,9 @@ describe('Tasks', () => {
   })
 
   test('listTasks filters by assignee', () => {
-    const yilin = db.listTasks({ assignee: 'yilin' })
-    assert.ok(yilin.every(t => t.assignee === 'yilin'))
-    assert.ok(yilin.length >= 1)
+    const filtered = db.listTasks({ assignee: 'user' })
+    assert.ok(filtered.every(t => t.assignee === 'user'))
+    assert.ok(filtered.length >= 1)
   })
 
   test('listTasks orders by priority', () => {
@@ -119,7 +119,7 @@ describe('Wishes', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-wishes-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-wishes-test-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
@@ -133,8 +133,8 @@ describe('Wishes', () => {
   })
 
   test('addWish with reason and priority', () => {
-    const wish = db.addWish('接入日程 API', '想帮以琳管理日程', 'high')
-    assert.equal(wish.reason, '想帮以琳管理日程')
+    const wish = db.addWish('接入日程 API', '想帮user管理日程', 'high')
+    assert.equal(wish.reason, '想帮user管理日程')
     assert.equal(wish.priority, 'high')
   })
 

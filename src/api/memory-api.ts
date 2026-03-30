@@ -206,18 +206,18 @@ export async function handleMemoryAPI(req: IncomingMessage, res: ServerResponse,
 
   if (core && path === '/api/instances' && req.method === 'GET') {
     const instances = core.broker.status()
-    // 补充 symbiontSessionId（从 SessionManager 按 sessionKey 查找）
+    // 补充 siaSessionId（从 SessionManager 按 sessionKey 查找）
     const enriched = instances.map(inst => {
       const session = inst.sessionKey ? core.sessionManager.getLatestBySessionKey(inst.sessionKey) : undefined
-      return { ...inst, symbiontSessionId: session?.sessionId ?? null }
+      return { ...inst, siaSessionId: session?.sessionId ?? null }
     })
     json(enriched)
     return true
   }
 
   if (core && path.match(/^\/api\/conversation\/[^/]+$/) && req.method === 'GET') {
-    const symbiontSessionId = decodeURIComponent(path.split('/')[3])
-    const events = core.eventStore.read(symbiontSessionId)
+    const siaSessionId = decodeURIComponent(path.split('/')[3])
+    const events = core.eventStore.read(siaSessionId)
     // 只返回 chat 类型事件（用户和助手消息）
     const chatEvents = events
       .filter(e => e.type === 'chat')
@@ -410,7 +410,7 @@ export async function handleMemoryAPI(req: IncomingMessage, res: ServerResponse,
   if (core && path === '/api/personas' && req.method === 'GET') {
     const personas: Array<Record<string, unknown>> = []
 
-    // Main persona
+    // primary persona
     const mainManifest = core.persona.manifest
     if (mainManifest) {
       personas.push({
@@ -614,7 +614,7 @@ export async function handleMemoryAPI(req: IncomingMessage, res: ServerResponse,
   }
 
   if (path === '/api/releases' && req.method === 'POST') {
-    // Only allow from localhost (deploy.sh calls via ssh → 127.0.0.1)
+    // Only allow from localhost (deploy scripts call via ssh → 127.0.0.1)
     const remoteAddr = req.socket.remoteAddress ?? ''
     if (!remoteAddr.includes('127.0.0.1') && !remoteAddr.includes('::1')) {
       res.writeHead(403); res.end('Forbidden: releases can only be created from localhost'); return true

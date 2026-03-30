@@ -5,7 +5,7 @@
  */
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import type { SiaMcpToolHandler } from './symbiont-mcp-server.ts'
+import type { SymbiontMcpToolHandler } from './symbiont-mcp-server.ts'
 import type { SymbiontCore } from './symbiont-core.ts'
 import { cosineSimilarity } from '../memory/embedding-client.ts'
 import { updateManifestField } from '../persona/manifest.ts'
@@ -17,14 +17,14 @@ export interface RouterLike {
   completeForkFor: (sk: string, summary: string) => Promise<void>
 }
 
-export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaMcpToolHandler {
+export function createToolHandlers(core: SymbiontCore, router: RouterLike): SymbiontMcpToolHandler {
   return {
     dispatchWorker: (desc, sp, tools, isAsync, persona, sessionKey) => router.dispatchWorker(desc, sp, isAsync, persona, sessionKey),
     createFork: (desc, sk, createTopic, persona) => router.createForkFor(sk ?? 'terminal', desc, { createTopic, persona }),
     completeFork: (summary, sk) => router.completeForkFor(sk ?? 'terminal', summary),
     addMemoryCard: async (content, scene, tags, confidence, sessionKey) => {
       // Determine owner from sessionKey → persona
-      let owner = core.persona.manifest?.name ?? 'default'
+      let owner = 'default'
       if (sessionKey) {
         const session = core.sessionManager.getLatestBySessionKey(sessionKey)
         if (session && session.personaPack) {
@@ -102,7 +102,7 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
     },
     getMemoryCards: async (keyword, tags, scope, sessionKey) => {
       // Determine caller's persona for owner filtering
-      let callerOwner = core.persona.manifest?.name ?? 'default'
+      let callerOwner = 'default'
       if (sessionKey) {
         const session = core.sessionManager.getLatestBySessionKey(sessionKey)
         if (session && session.personaPack) {
@@ -111,9 +111,8 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
       }
 
       // scope=all permission check: only main persona can use
-      const mainPersonaName = core.persona.manifest?.name ?? 'default'
       let effectiveScope = scope ?? 'self'
-      if (effectiveScope === 'all' && callerOwner !== mainPersonaName) {
+      if (effectiveScope === 'all' && callerOwner !== 'default') {
         effectiveScope = 'self'  // downgrade
       }
 
@@ -165,6 +164,7 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
         enabled: true,
         timezone: options?.timezone,
         overlapPolicy: 'skip',
+        timeout: options?.timeout,
       })
       // One-shot: 在 cron trigger 处理后自动删除（通过 handleCronTrigger 检查）
       if (options?.oneShot) {
@@ -399,5 +399,6 @@ export function createToolHandlers(core: SymbiontCore, router: RouterLike): SiaM
       if (removed) core.logger.info('core', 'mcp-backend-removed', { name })
       return removed
     },
+    evolve: (description) => core.evolve(description),
   }
 }

@@ -63,7 +63,7 @@ describe('Tasks API', () => {
   let base: string
 
   before(async () => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-api-tasks-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-api-tasks-'))
     db = new MemoryDB(dir)
     const s = await startTestServer(db)
     server = s.server; base = s.base
@@ -71,7 +71,7 @@ describe('Tasks API', () => {
   after(() => { server.close(); db.close(); rmSync(dir, { recursive: true, force: true }) })
 
   test('POST /api/tasks creates task', async () => {
-    const { status, data } = await post(base, '/api/tasks', { title: '修复飞书', assignee: 'xiaoxi', priority: 'high' })
+    const { status, data } = await post(base, '/api/tasks', { title: '修复飞书', assignee: 'default', priority: 'high' })
     assert.equal(status, 200)
     assert.ok(data.id.startsWith('task-'))
     assert.equal(data.title, '修复飞书')
@@ -105,10 +105,10 @@ describe('Tasks API', () => {
     assert.ok(data.every((t: any) => t.status === 'todo'))
   })
 
-  test('GET /api/tasks?assignee=yilin filters', async () => {
-    await post(base, '/api/tasks', { title: '以琳的任务', assignee: 'yilin' })
-    const { data } = await get(base, '/api/tasks?assignee=yilin')
-    assert.ok(data.every((t: any) => t.assignee === 'yilin'))
+  test('GET /api/tasks?assignee=user filters', async () => {
+    await post(base, '/api/tasks', { title: 'user的任务', assignee: 'user' })
+    const { data } = await get(base, '/api/tasks?assignee=user')
+    assert.ok(data.every((t: any) => t.assignee === 'user'))
     assert.ok(data.length >= 1)
   })
 
@@ -159,7 +159,7 @@ describe('Wishes API', () => {
   let base: string
 
   before(async () => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-api-wishes-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-api-wishes-'))
     db = new MemoryDB(dir)
     const s = await startTestServer(db)
     server = s.server; base = s.base
@@ -167,7 +167,7 @@ describe('Wishes API', () => {
   after(() => { server.close(); db.close(); rmSync(dir, { recursive: true, force: true }) })
 
   test('POST /api/wishes creates wish', async () => {
-    const { status, data } = await post(base, '/api/wishes', { title: '学画画', reason: '想给以琳画头像', priority: 'high' })
+    const { status, data } = await post(base, '/api/wishes', { title: '学画画', reason: '想给user画头像', priority: 'high' })
     assert.equal(status, 200)
     assert.ok(data.id.startsWith('wish-'))
     assert.equal(data.title, '学画画')

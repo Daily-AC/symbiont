@@ -10,15 +10,15 @@ describe('Embedding cache', () => {
   let tmpDir: string
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-perf-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-perf-test-'))
     db = new MemoryDB(tmpDir)
     // Insert 500 cards with random embeddings (384 dims)
     for (let i = 0; i < 500; i++) {
       const card = db.addCard({
         content: `test card ${i}`, scene: 'perf-test',
         tags: [`tag-${i % 10}`], confidence: 0.5 + Math.random() * 0.5,
-        source: [], connections: [], owner: 'xiaoxi',
-      }, 'xiaoxi')
+        source: [], connections: [], owner: 'default',
+      }, 'default')
       const emb = new Float32Array(384)
       for (let j = 0; j < 384; j++) emb[j] = Math.random() - 0.5
       db.updateEmbedding(card.id, emb)

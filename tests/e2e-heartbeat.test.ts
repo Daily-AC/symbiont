@@ -98,7 +98,7 @@ describe('Extractor persona loading', { timeout: 10_000 }, () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-extractor-persona-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-extractor-persona-'))
     db = new MemoryDB(dir)
     broker = new CCBroker({ maxConcurrent: { main: 1, specialist: 1, worker: 2 } })
   })

@@ -11,8 +11,8 @@ describe('PersonaLoader', () => {
 
   it('should load soul prompt from persona pack', () => {
     const config = loadPersona(packDir)
-    assert.ok(config.soulPrompt.includes('Echo'))
-    assert.ok(config.soulPrompt.includes('companion'))
+    assert.ok(config.soulPrompt.includes('AI'))
+    assert.ok(config.soulPrompt.includes('user'))
   })
 
   it('should have memoryDir pointing to persona memory', () => {
@@ -24,7 +24,7 @@ describe('PersonaLoader', () => {
   it('should load manifest with permissions', () => {
     const config = loadPersona(packDir)
     assert.ok(config.manifest)
-    assert.strictEqual(config.manifest!.name, 'echo')
+    assert.strictEqual(config.manifest!.name, 'default')
     assert.ok(config.manifest!.permissions.writable.includes('voice/'))
     assert.ok(config.manifest!.permissions.protected.includes('soul/'))
   })

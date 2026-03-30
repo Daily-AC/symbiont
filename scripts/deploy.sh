@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sia 部署脚本 — SSH 到 home 服务器
+# Symbiont 部署脚本 — SSH 到 home 服务器
 #
 # 用法: ./scripts/deploy.sh [--skip-tests] [--skip-deps]
 #
@@ -34,7 +34,7 @@ fail() { echo -e "${RED}✗ $1${NC}"; exit 1; }
 remote() { ssh "$HOST" "$@"; }
 
 # ============================================
-echo -e "${GREEN}=== Sia Deploy ===${NC}"
+echo -e "${GREEN}=== Symbiont Deploy ===${NC}"
 
 # 0. 连通性检查
 step "0/7" "检查 SSH 连接..."

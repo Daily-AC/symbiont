@@ -11,7 +11,7 @@ describe('LocalFallback', () => {
   let fallback: LocalFallback
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-fallback-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-fallback-test-'))
   })
 
   after(() => {
@@ -86,7 +86,7 @@ describe('LocalFallback', () => {
 
   describe('JSONL persistence', () => {
     test('entries survive new instance (same dir)', () => {
-      const persistDir = mkdtempSync(join(tmpdir(), 'symbiont-fallback-persist-'))
+      const persistDir = mkdtempSync(join(tmpdir(), 'sia-fallback-persist-'))
       try {
         const fb1 = new LocalFallback(persistDir)
         fb1.enqueue('symbiont_remember', { key: 'persist-test' })
@@ -108,7 +108,7 @@ describe('LocalFallback', () => {
     })
 
     test('JSONL file is created in fallback subdir', () => {
-      const persistDir = mkdtempSync(join(tmpdir(), 'symbiont-fallback-file-'))
+      const persistDir = mkdtempSync(join(tmpdir(), 'sia-fallback-file-'))
       try {
         const fb = new LocalFallback(persistDir)
         fb.enqueue('symbiont_remember', { key: 'file-check' })

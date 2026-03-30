@@ -23,6 +23,7 @@ import { Router } from '../src/core/router.ts'
 import { WorkerManager } from '../src/core/worker-manager.ts'
 import { CognitionEngine } from '../src/memory/cognition.ts'
 import { MemoryBridge } from '../src/memory/memory-bridge.ts'
+import { MemoryDB } from '../src/memory/db.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const TEST_DATA = join(__dirname, '..', 'data', '_test_' + Date.now())
@@ -34,7 +35,7 @@ describe('EventStore', () => {
   const dir = join(TEST_DATA, 'events')
   let store: EventStore
 
-  before(() => { store = new EventStore(dir) })
+  before(() => { store = new EventStore(new MemoryDB(dir)) })
 
   test('append and read events', () => {
     const evt = store.append({
@@ -63,8 +64,8 @@ describe('EventStore', () => {
     assert.equal(store.read('non-existent').length, 0)
   })
 
-  test('JSONL file exists on disk', () => {
-    assert.ok(existsSync(join(dir, 'test-session-1.jsonl')))
+  test('SQLite DB file exists on disk', () => {
+    assert.ok(existsSync(join(dir, 'memory.db')))
   })
 
   // fork/merge 事件溯源
@@ -94,7 +95,7 @@ describe('EventStore', () => {
   })
 
   test('getChildEvents retrieves child event stream via fork index', () => {
-    const store3 = new EventStore(join(TEST_DATA, 'events3'))
+    const store3 = new EventStore(new MemoryDB(join(TEST_DATA, 'events3')))
     store3.appendFork('parent-1', 'child-1', 'task A')
     store3.append({ type: 'chat', sessionId: 'child-1', data: { role: 'assistant', content: 'done' } })
     store3.appendMerge('parent-1', 'child-1', 'task A completed')
@@ -108,7 +109,7 @@ describe('EventStore', () => {
   })
 
   test('resolveSource parses event URI', () => {
-    const store4 = new EventStore(join(TEST_DATA, 'events4'))
+    const store4 = new EventStore(new MemoryDB(join(TEST_DATA, 'events4')))
     for (let i = 0; i < 5; i++) {
       store4.append({ type: 'chat', sessionId: 'src-test', data: { idx: i } })
     }
@@ -122,7 +123,7 @@ describe('EventStore', () => {
   })
 
   test('getTimeline shows concise view', () => {
-    const store2 = new EventStore(join(TEST_DATA, 'events2'))
+    const store2 = new EventStore(new MemoryDB(join(TEST_DATA, 'events2')))
     store2.append({ type: 'chat', sessionId: 's1', data: { role: 'user', content: '这是一段很长的消息'.repeat(10) } })
     store2.appendFork('s1', 'w1', 'do something')
     store2.appendMerge('s1', 'w1', 'done')
@@ -145,28 +146,28 @@ describe('SessionManager', () => {
   before(() => { manager = new SessionManager(dir) })
 
   test('create session', () => {
-    const session = manager.create('xiaoxi')
-    assert.ok(session.sessionId.startsWith('symbiont-'))
-    assert.equal(session.personaPack, 'xiaoxi')
+    const session = manager.create('default')
+    assert.ok(session.sessionId.startsWith('sia-'))
+    assert.equal(session.personaPack, 'default')
     assert.equal(session.state, 'active')
     assert.equal(session.ccSessionId, null)
   })
 
   test('get session', () => {
-    const created = manager.create('xiaoxi')
+    const created = manager.create('default')
     const retrieved = manager.get(created.sessionId)
     assert.ok(retrieved)
     assert.equal(retrieved!.sessionId, created.sessionId)
   })
 
   test('update CC session ID', () => {
-    const session = manager.create('xiaoxi')
+    const session = manager.create('default')
     manager.updateCCSessionId(session.sessionId, 'cc-uuid-123')
     assert.equal(manager.get(session.sessionId)!.ccSessionId, 'cc-uuid-123')
   })
 
   test('sleep and wake', () => {
-    const session = manager.create('xiaoxi')
+    const session = manager.create('default')
     manager.sleep(session.sessionId)
     assert.equal(manager.get(session.sessionId)!.state, 'sleeping')
     manager.wake(session.sessionId)
@@ -174,14 +175,14 @@ describe('SessionManager', () => {
   })
 
   test('getActive returns an active session', () => {
-    manager.create('xiaoxi')
+    manager.create('default')
     const active = manager.getActive()
     assert.ok(active)
     assert.equal(active!.state, 'active')
   })
 
   test('persistence - reload from disk', () => {
-    const session = manager.create('xiaoxi')
+    const session = manager.create('default')
     manager.updateCCSessionId(session.sessionId, 'persist-test')
     const manager2 = new SessionManager(dir)
     const reloaded = manager2.get(session.sessionId)
@@ -283,9 +284,9 @@ describe('Persona Loader', () => {
 
   test('soul + voice merged into soulPrompt', () => {
     const persona = loadPersona(packDir)
-    assert.ok(persona.soulPrompt.includes('Echo'))
-    assert.ok(persona.soulPrompt.includes('companion'))
-    assert.ok(persona.soulPrompt.includes('Voice'))
+    assert.ok(persona.soulPrompt.includes('AI'))
+    assert.ok(persona.soulPrompt.includes('使命'))
+    assert.ok(persona.soulPrompt.includes('表达规范'))
   })
 
   test('persona is identity only — no skills or hands', () => {
@@ -298,7 +299,7 @@ describe('Persona Loader', () => {
   test('manifest is loaded with permissions', () => {
     const persona = loadPersona(packDir)
     assert.ok(persona.manifest)
-    assert.equal(persona.manifest!.name, 'echo')
+    assert.equal(persona.manifest!.name, 'default')
     assert.ok(persona.manifest!.permissions.writable.length > 0)
     assert.ok(persona.manifest!.permissions.protected.length > 0)
   })
@@ -434,7 +435,7 @@ describe('WorkerManager', () => {
   test('dispatch worker and get result', async () => {
     const { CCBroker } = await import('../src/core/cc-broker.ts')
     const broker = new CCBroker({ maxConcurrent: { main: 1, worker: 3 } })
-    const es = new EventStore(join(dir, 'events'))
+    const es = new EventStore(new MemoryDB(join(dir, 'events')))
     const wm = new WorkerManager({
       broker,
       eventStore: es,
@@ -457,7 +458,7 @@ describe('WorkerManager', () => {
   })
 
   test('worker creates fork-merge event chain', async () => {
-    const es = new EventStore(join(dir, 'events'))
+    const es = new EventStore(new MemoryDB(join(dir, 'events')))
     const mainEvents = es.read('parent-1')
 
     const fork = mainEvents.find(e => e.type === 'fork')
@@ -513,13 +514,12 @@ describe('Router - integration', () => {
   })
 
   test('events are logged', () => {
-    const eventsDir = join(dataDir, 'events')
-    assert.ok(existsSync(eventsDir))
-    const files = readdirSync(eventsDir).filter(f => f.endsWith('.jsonl'))
-    assert.ok(files.length > 0)
-    const content = readFileSync(join(eventsDir, files[0]), 'utf-8')
-    const lines = content.trim().split('\n').filter(Boolean)
-    assert.ok(lines.length >= 2)
+    // EventStore now uses SQLite via MemoryDB (at dataDir/memory-sqlite/memory.db)
+    const dbFile = join(dataDir, 'memory-sqlite', 'memory.db')
+    assert.ok(existsSync(dbFile), 'SQLite DB file should exist')
+    // Verify events were actually recorded via the router's event store
+    const timeline = router.getTimeline(Router.TERMINAL_KEY)
+    assert.ok(timeline.length >= 2, 'should have at least 2 timeline entries')
   })
 
   test('session is persisted with ccSessionId', () => {

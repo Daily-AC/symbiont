@@ -13,7 +13,7 @@ import { CognitionEngine } from '../memory/cognition.ts'
 import { loadPersona, type PersonaConfig } from '../persona/loader.ts'
 import { loadUser, type UserProfile } from '../user/loader.ts'
 import { Logger } from './logger.ts'
-import { createSymbiontMcpServer, type SiaMcpServerHandle } from './symbiont-mcp-server.ts'
+import { createSymbiontMcpServer, type SymbiontMcpServerHandle } from './symbiont-mcp-server.ts'
 import { createToolHandlers } from './mcp-tool-handlers.ts'
 import { handleCronTrigger } from './cron-handler.ts'
 import { McpGateway } from './mcp-gateway.ts'
@@ -68,7 +68,7 @@ export class SymbiontCore {
   private _instanceThrottleTimer: ReturnType<typeof setTimeout> | null = null
   private _connector: Connector
   get connector(): Connector { return this._connector }
-  private mcpServer: SiaMcpServerHandle | null = null
+  private mcpServer: SymbiontMcpServerHandle | null = null
   private _gateway: McpGateway | null = null
   private _router: { sendTo: (sessionKey: string, message: string) => Promise<string>; getSession: (key: string) => any; getAllSessions: () => Array<{ sessionKey: string }>; rotateSession: (sessionKey: string, summaryFile?: string) => Promise<void> } | null = null
   private _sendFeishuMessage: ((chatId: string, text: string) => Promise<void>) | null = null
@@ -214,7 +214,7 @@ export class SymbiontCore {
     const handler = createToolHandlers(this, router as any)
     this.mcpServer = await createSymbiontMcpServer(handler, this.logger)
 
-    // 创建 MCP Gateway 并注册 symbiont-core 后端
+    // 创建 MCP Gateway 并注册 sia-core 后端
     const configDir = join(this.config.dataDir, '..', 'config')
     const sharedCaps = loadSharedCapabilities(configDir)
 
@@ -255,7 +255,7 @@ export class SymbiontCore {
     try {
       await this._gateway.start()
       this.logger.info('core', 'mcp-gateway-started', { port: GATEWAY_PORT, url: this._gateway.url })
-      this.workspaceManager.registerMcp('symbiont', this._gateway.url)
+      this.workspaceManager.registerMcp('sia', this._gateway.url)
       // 加载第三方持久化后端
       this._gateway.loadBackends()
       // 注册启动前排队的内置后端（如飞书）
@@ -271,7 +271,7 @@ export class SymbiontCore {
     } catch (err) {
       this.logger.warn('core', 'mcp-gateway-failed', { port: GATEWAY_PORT, error: String(err) })
       console.error(`[mcp-gateway] failed to start on port ${GATEWAY_PORT}, falling back to direct connection`)
-      // 降级：直接注册 symbiont-core MCP URL
+      // 降级：直接注册 sia-core MCP URL
       this.workspaceManager.registerMcp('symbiont-core', this.mcpServer.url)
     }
     // Recovery 已移到 index.ts（router ready 之后执行，确保 MCP Gateway 就绪）
@@ -336,7 +336,7 @@ export class SymbiontCore {
     const instances = this.broker.status()
     return instances.map((inst: any) => {
       const session = inst.sessionKey ? this.sessionManager.getLatestBySessionKey(inst.sessionKey) : undefined
-      return { ...inst, symbiontSessionId: session?.sessionId ?? null }
+      return { ...inst, siaSessionId: session?.sessionId ?? null }
     })
   }
 
@@ -378,7 +378,7 @@ export class SymbiontCore {
 
   /**
    * 读取最近 N 行系统日志。
-   * 日志文件在 data/logs/symbiont-YYYY-MM-DD.ndjson。
+   * 日志文件在 data/logs/sia-YYYY-MM-DD.ndjson。
    */
   getSystemLogs(lines = 50): string {
     const logDir = join(this.config.dataDir, 'logs')
@@ -386,7 +386,7 @@ export class SymbiontCore {
 
     // 找到最新的日志文件
     const files = readdirSync(logDir)
-      .filter(f => f.startsWith('symbiont-') && f.endsWith('.ndjson'))
+      .filter(f => f.startsWith('sia-') && f.endsWith('.ndjson'))
       .sort()
       .reverse()
 
@@ -497,86 +497,200 @@ export class SymbiontCore {
   }
 
   /**
-   * 自进化：在 git worktree 隔离环境中修改 Symbiont 源码。
+   * 自进化 v2：在 git worktree 隔离环境中修改 Symbiont 源码。
    *
-   * 流程：worktree 创建 → 工人在副本中改代码+跑测试 → 通过则合并 → 失败则丢弃
+   * 流程：worktree 创建 → 实现工人编码+测试 → review 工人审查 → 合并 → push → deploy-request → 飞书通知
    */
   async evolve(description: string): Promise<{ success: boolean; result: string }> {
     const siaRoot = join(this.config.dataDir, '..')
     const branchName = `evolve-${Date.now()}`
     const worktreeDir = join(siaRoot, '.worktrees', branchName)
     const startTime = Date.now()
+    const MAX_RETRIES = 2
 
     this.logger.info('evolve', 'start', { description, branchName })
 
-    try {
-      // 确保是 git 仓库
-      if (!existsSync(join(siaRoot, '.git'))) {
-        const ret = { success: false, result: 'Symbiont 目录不是 git 仓库，无法使用 worktree 隔离' }
-        this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
-        return ret
-      }
-
-      // 创建 worktree
-      execSync(`git worktree add -b ${branchName} "${worktreeDir}"`, { cwd: siaRoot, stdio: 'pipe' })
-      this.logger.info('evolve', 'worktree-created', { dir: worktreeDir })
-
-      // 派工人在 worktree 中执行改动
-      const workerResult = await this.workerManager.dispatch({
-        id: `evolve-${branchName}`,
-        description: [
-          `你正在 Symbiont 平台的 git worktree 隔离副本中工作。`,
-          `任务：${description}`,
-          ``,
-          `规则：`,
-          `1. 修改代码实现任务`,
-          `2. 完成后运行测试：node --experimental-strip-types --test tests/*.test.ts`,
-          `3. 测试全部通过才算成功`,
-          `4. 用 git add + git commit 提交你的改动`,
-          `5. 只输出最终结果：成功/失败 + 简要说明`,
-        ].join('\n'),
-        cwd: worktreeDir,
-        parentSessionId: 'evolve',
-      })
-
-      if (workerResult.success) {
-        // 测试通过 → 合并到主分支
-        try {
-          execSync(`git merge ${branchName} --no-edit`, { cwd: siaRoot, stdio: 'pipe' })
-          this.logger.info('evolve', 'merged', { branchName })
-        } catch (mergeErr) {
-          try { execSync(`git merge --abort`, { cwd: siaRoot, stdio: 'pipe' }) } catch { /* no merge in progress */ }
-          this.logger.warn('evolve', 'merge-conflict', { branchName })
-          const ret = { success: false, result: `工人完成了改动但合并冲突：${(mergeErr as Error).message}` }
-          this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
-          return ret
-        }
-      }
-
-      // 清理 worktree
-      try {
-        execSync(`git worktree remove "${worktreeDir}" --force`, { cwd: siaRoot, stdio: 'pipe' })
-        execSync(`git branch -D ${branchName}`, { cwd: siaRoot, stdio: 'pipe' })
-      } catch { /* 清理失败不影响结果 */ }
-
-      // evolve 成功后 5 秒延迟重启 Symbiont Core，让新代码生效
-      if (workerResult.success) {
-        this.scheduleRestart('evolve 合并了新代码，需要重启加载')
-      }
-
-      const ret = {
-        success: workerResult.success,
-        result: workerResult.result.slice(0, 500),
-      }
-      this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
-      return ret
-    } catch (err) {
-      // 清理 worktree（容错）
+    const cleanup = () => {
       try {
         execSync(`git worktree remove "${worktreeDir}" --force`, { cwd: siaRoot, stdio: 'pipe' })
         execSync(`git branch -D ${branchName}`, { cwd: siaRoot, stdio: 'pipe' })
       } catch { /* ignore */ }
+    }
 
+    try {
+      // 确保是 git 仓库
+      if (!existsSync(join(siaRoot, '.git'))) {
+        const ret = { success: false, result: 'Sia 目录不是 git 仓库，无法使用 worktree 隔离' }
+        this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+        return ret
+      }
+
+      // 1. 创建 worktree
+      execSync(`git worktree add -b ${branchName} "${worktreeDir}"`, { cwd: siaRoot, stdio: 'pipe' })
+      this.logger.info('evolve', 'worktree-created', { dir: worktreeDir })
+
+      // 2. 实现 + review 循环（最多重试 MAX_RETRIES 次）
+      let implResult: { success: boolean; result: string } | null = null
+      let reviewPassed = false
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        // 如果是重试，先 reset worktree 到 master 状态
+        if (attempt > 0) {
+          this.logger.info('evolve', 'retry-implementation', { attempt, branchName })
+          execSync(`git reset --hard master`, { cwd: worktreeDir, stdio: 'pipe' })
+        }
+
+        // 2a. 派实现工人
+        implResult = await this.workerManager.dispatch({
+          id: `evolve-impl-${branchName}-${attempt}`,
+          description: [
+            `你正在 Symbiont 平台的 git worktree 隔离副本中工作。`,
+            `任务：${description}`,
+            attempt > 0 ? `\n⚠️ 这是第 ${attempt + 1} 次尝试。上次 code review 被拒绝，请根据反馈改进。` : '',
+            ``,
+            `开发规范（不可跳过）：`,
+            `1. 修改代码实现任务`,
+            `2. 写测试（和功能代码在同一个 commit）`,
+            `3. 运行全量测试：node --experimental-strip-types --test tests/*.test.ts`,
+            `4. 测试全部通过才提交`,
+            `5. git add + git commit（描述清楚改了什么和为什么）`,
+            `6. 只输出最终结果：成功/失败 + 改动摘要`,
+          ].join('\n'),
+          cwd: worktreeDir,
+          parentSessionId: 'evolve',
+        })
+
+        if (!implResult.success) {
+          this.logger.warn('evolve', 'implementation-failed', { attempt, branchName })
+          break // 实现失败不重试
+        }
+
+        // 2b. 派 review 工人
+        this.logger.info('evolve', 'dispatching-review', { attempt, branchName })
+        const reviewResult = await this.workerManager.dispatch({
+          id: `evolve-review-${branchName}-${attempt}`,
+          description: [
+            `你是 code reviewer。审查当前分支相对于 master 的改动。`,
+            ``,
+            `审查步骤：`,
+            `1. 运行 git diff master..HEAD 查看所有改动`,
+            `2. 检查：`,
+            `   - 代码质量和可读性`,
+            `   - 测试覆盖（每个功能改动都有对应测试）`,
+            `   - 系统流通性（改动是否与现有架构一致）`,
+            `   - 是否有明显 bug 或安全问题`,
+            `3. 输出格式（严格遵循）：`,
+            `   第一行必须是 APPROVE 或 REJECT`,
+            `   后面跟原因说明`,
+          ].join('\n'),
+          cwd: worktreeDir,
+          parentSessionId: 'evolve',
+        })
+
+        const reviewText = reviewResult.result.trim()
+        const firstLine = reviewText.split('\n')[0].trim().toUpperCase()
+
+        if (firstLine.includes('APPROVE')) {
+          reviewPassed = true
+          this.logger.info('evolve', 'review-approved', { attempt, branchName })
+          break
+        } else {
+          this.logger.warn('evolve', 'review-rejected', { attempt, branchName, reason: reviewText.slice(0, 200) })
+          if (attempt >= MAX_RETRIES) {
+            const ret = { success: false, result: `Code review 拒绝（已重试 ${MAX_RETRIES} 次）：${reviewText.slice(0, 300)}` }
+            this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+            cleanup()
+            return ret
+          }
+        }
+      }
+
+      if (!implResult || !implResult.success) {
+        cleanup()
+        const ret = { success: false, result: implResult?.result.slice(0, 500) ?? '实现失败' }
+        this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+        return ret
+      }
+
+      if (!reviewPassed) {
+        cleanup()
+        const ret = { success: false, result: 'Code review 未通过' }
+        this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+        return ret
+      }
+
+      // 3. 合并到 master
+      try {
+        execSync(`git merge ${branchName} --no-edit`, { cwd: siaRoot, stdio: 'pipe' })
+        this.logger.info('evolve', 'merged', { branchName })
+      } catch (mergeErr) {
+        try { execSync(`git merge --abort`, { cwd: siaRoot, stdio: 'pipe' }) } catch { /* no merge in progress */ }
+        this.logger.warn('evolve', 'merge-conflict', { branchName })
+        cleanup()
+        const ret = { success: false, result: `工人完成了改动但合并冲突：${(mergeErr as Error).message}` }
+        this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+        return ret
+      }
+
+      // 4. git push origin master
+      try {
+        execSync(`git push origin master`, { cwd: siaRoot, stdio: 'pipe', timeout: 30000 })
+        this.logger.info('evolve', 'pushed', { branchName })
+      } catch (pushErr) {
+        this.logger.warn('evolve', 'push-failed', { branchName, error: (pushErr as Error).message })
+        // push 失败不阻止后续流程，deployer 可以手动 pull
+      }
+
+      // 5. 获取改动摘要
+      let diffSummary = ''
+      try {
+        diffSummary = execSync(`git log --oneline -5`, { cwd: siaRoot, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+      } catch { /* ignore */ }
+
+      // 6. 写 deploy-request.json
+      const deployRequest = {
+        trigger: 'evolve',
+        branch: branchName,
+        description,
+        changes: diffSummary,
+        requested_at: new Date().toISOString(),
+      }
+      try {
+        const deployPath = join(this.config.dataDir, 'deploy-request.json')
+        writeFileSync(deployPath, JSON.stringify(deployRequest, null, 2), 'utf-8')
+        this.logger.info('evolve', 'deploy-request-written', { path: deployPath })
+      } catch (writeErr) {
+        this.logger.warn('evolve', 'deploy-request-write-failed', { error: (writeErr as Error).message })
+      }
+
+      // 7. 飞书通知
+      try {
+        const chatId = process.env.SYMBIONT_CRON_CHAT_ID ?? 
+        const notifyText = [
+          `🧬 Symbiont 自进化完成`,
+          ``,
+          `📝 任务：${description}`,
+          `🌿 分支：${branchName}`,
+          `📊 改动：`,
+          diffSummary,
+          ``,
+          `⏳ 已请求部署，等待确认。`,
+        ].join('\n')
+        await this.sendFeishuNotification(chatId, notifyText)
+      } catch { /* 通知失败不影响结果 */ }
+
+      // 8. 清理 worktree
+      cleanup()
+
+      // 9. 记录日志
+      const ret = {
+        success: true,
+        result: `进化完成，已合并到 master 并请求部署。改动：${implResult.result.slice(0, 300)}`,
+      }
+      this.appendEvolveLog({ branchName, description, success: ret.success, result: ret.result, startTime })
+      return ret
+    } catch (err) {
+      cleanup()
       const msg = (err as Error).message
       this.logger.error('evolve', 'failed', { description, error: msg })
       const ret = { success: false, result: msg }

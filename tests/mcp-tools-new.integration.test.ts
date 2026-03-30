@@ -91,7 +91,7 @@ function createStubHandler() {
     },
     taskAdd: (title: string, description?: string, assignee?: string, priority?: string, due_date?: string) => {
       const id = `task-test-${Date.now()}`
-      const task = { id, title, description, assignee: assignee ?? 'xiaoxi', status: 'todo', priority: priority ?? 'normal', due_date, created_at: new Date().toISOString() }
+      const task = { id, title, description, assignee: assignee ?? 'default', status: 'todo', priority: priority ?? 'normal', due_date, created_at: new Date().toISOString() }
       tasks.set(id, task)
       return task
     },
@@ -166,7 +166,7 @@ describe('MCP new tools', () => {
     const server = await createSymbiontMcpServer(handler, createTestLogger())
     after(() => server.close())
 
-    const body = await mcpCall(server.url, 'symbiont_wish', { title: '学会画画', reason: '想给以琳画头像', priority: 'high' })
+    const body = await mcpCall(server.url, 'symbiont_wish', { title: '学会画画', reason: '想给user画头像', priority: 'high' })
     assert.ok(body.result)
     const text = body.result.content[0].text
     assert.ok(text.includes('愿望已许下'), `should contain 愿望已许下, got: ${text}`)
@@ -186,7 +186,7 @@ describe('MCP new tools', () => {
 
     const body = await mcpCall(server.url, 'symbiont_task_add', {
       title: '修复飞书引用',
-      assignee: 'xiaoxi',
+      assignee: 'default',
       priority: 'high',
     })
     const text = body.result.content[0].text

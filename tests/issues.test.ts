@@ -15,7 +15,7 @@ describe('Issues DB', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-issues-db-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-issues-db-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
@@ -26,7 +26,7 @@ describe('Issues DB', () => {
     assert.equal(issue.title, '飞书卡片消息无法解析')
     assert.equal(issue.status, 'open')
     assert.equal(issue.severity, 'normal')
-    assert.equal(issue.created_by, 'xiaoxi')
+    assert.equal(issue.created_by, 'default')
   })
 
   test('addIssue with all fields', () => {
@@ -128,7 +128,7 @@ describe('Issues API', () => {
   let base: string
 
   before(async () => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-issues-api-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-issues-api-'))
     db = new MemoryDB(dir)
     const s = await startTestServer(db)
     server = s.server; base = s.base

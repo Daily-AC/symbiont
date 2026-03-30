@@ -9,7 +9,7 @@ import { recall } from '../memory/recall.ts'
 export interface RouterSession {
   sessionKey: string
   instanceId: string
-  symbiontSessionId: string
+  siaSessionId: string
   activeForkId: string | null
   turnCount: number
 }
@@ -79,11 +79,11 @@ export class Router {
       const session = this.sessions.get(sessionKey)
       if (session) {
         this.core.eventStore.append({
-          type: 'chat', sessionId: session.symbiontSessionId,
+          type: 'chat', sessionId: session.siaSessionId,
           data: { role: 'assistant', content: text },
         })
         this.core.sseManager.broadcast('conversation', {
-          sessionId: session.symbiontSessionId,
+          sessionId: session.siaSessionId,
           message: { role: 'assistant', content: text },
         })
       }
@@ -165,7 +165,7 @@ export class Router {
     )
     const workspaceDir = ws.dir
 
-    let symbiontSessionId: string
+    let siaSessionId: string
     let instance: Awaited<ReturnType<typeof this.core.broker.getOrCreate>>
 
     const latestSession = this.core.sessionManager.getLatestBySessionKey(sessionKey)
@@ -178,7 +178,7 @@ export class Router {
       this.core.sessionManager.wake(latestSession.sessionId)
       // 更新 sessionKey（fallback 恢复时可能 key 不匹配，如 terminal → dm:xxx）
       this.core.sessionManager.updateSessionKey(latestSession.sessionId, sessionKey)
-      symbiontSessionId = latestSession.sessionId
+      siaSessionId = latestSession.sessionId
 
       // 从事件流生成 recoveryPrompt（resume 失败或无 ccSessionId 时用来重建上下文）
       const events = this.core.eventStore.getLatestSummary(latestSession.sessionId, 10)
@@ -194,7 +194,7 @@ export class Router {
       }, options?.description)
     } else {
       const newSession = this.core.sessionManager.create(this.core.persona.manifest?.name ?? 'default', sessionKey)
-      symbiontSessionId = newSession.sessionId
+      siaSessionId = newSession.sessionId
       instance = await this.core.broker.getOrCreate(sessionKey, 'main', {
         cwd: workspaceDir,
         mcpConfigFiles,
@@ -222,16 +222,16 @@ export class Router {
     const session: RouterSession = {
       sessionKey,
       instanceId: instance.id,
-      symbiontSessionId,
+      siaSessionId,
       activeForkId: null,
       turnCount: 0,
     }
     this.sessions.set(sessionKey, session)
 
     if (latestSession && (latestSession.state === 'sleeping' || latestSession.state === 'active')) {
-      this.core.logger.info('router', 'session-recovered', { sessionKey, symbiontSessionId, previousCcSessionId: latestSession.ccSessionId, state: latestSession.state, instanceId: instance.id })
+      this.core.logger.info('router', 'session-recovered', { sessionKey, siaSessionId, previousCcSessionId: latestSession.ccSessionId, state: latestSession.state, instanceId: instance.id })
     } else {
-      this.core.logger.info('router', 'session-created', { sessionKey, symbiontSessionId, instanceId: instance.id })
+      this.core.logger.info('router', 'session-created', { sessionKey, siaSessionId, instanceId: instance.id })
     }
     return session
   }
@@ -276,11 +276,11 @@ export class Router {
     const ccSessionId = ccInstance?.process.getSessionId() ?? null
 
     this.core.eventStore.append({
-      type: 'chat', sessionId: session.symbiontSessionId,
+      type: 'chat', sessionId: session.siaSessionId,
       data: { role: 'user', content: userMessage, ccSessionId },
     })
     this.core.sseManager.broadcast('conversation', {
-      sessionId: session.symbiontSessionId,
+      sessionId: session.siaSessionId,
       message: { role: 'user', content: userMessage },
     })
 
@@ -295,21 +295,21 @@ export class Router {
       const { result, sessionId: newCcSessionId, blocks } = await this.core.broker.sendPrompt(session.instanceId, enrichedMessage)
 
       if (newCcSessionId) {
-        this.core.sessionManager.updateCCSessionId(session.symbiontSessionId, newCcSessionId)
+        this.core.sessionManager.updateCCSessionId(session.siaSessionId, newCcSessionId)
       }
 
       this.core.eventStore.append({
-        type: 'chat', sessionId: session.symbiontSessionId,
+        type: 'chat', sessionId: session.siaSessionId,
         data: { role: 'assistant', content: result, blocks, ccSessionId: newCcSessionId ?? ccSessionId },
       })
       this.core.sseManager.broadcast('conversation', {
-        sessionId: session.symbiontSessionId,
+        sessionId: session.siaSessionId,
         message: { role: 'assistant', content: result, blocks },
       })
 
       // Record turns for memory extraction
-      this.core.memoryExtractor.recordTurn('user', userMessage, session.symbiontSessionId)
-      this.core.memoryExtractor.recordTurn('assistant', result, session.symbiontSessionId)
+      this.core.memoryExtractor.recordTurn('user', userMessage, session.siaSessionId)
+      this.core.memoryExtractor.recordTurn('assistant', result, session.siaSessionId)
 
       session.turnCount++
       if (session.turnCount % this.cognitionCheckInterval === 0) {
@@ -338,11 +338,11 @@ export class Router {
 
     this.rotatingKeys.add(sessionKey)
 
-    this.core.logger.info('router', 'rotate-begin', { sessionKey, oldSiaSession: session.symbiontSessionId, summaryFile })
+    this.core.logger.info('router', 'rotate-begin', { sessionKey, oldSiaSession: session.siaSessionId, summaryFile })
 
     try {
       // 1. 标记旧 session 为 ended（不是 sleeping，防止被恢复）
-      this.core.sessionManager.end(session.symbiontSessionId)
+      this.core.sessionManager.end(session.siaSessionId)
 
       // 2. 销毁旧 CC 实例
       try {
@@ -360,7 +360,7 @@ export class Router {
         ? `[上下文已切换] 上一轮会话的总结文件在: ${summaryFile}\n请先读取该文件了解上下文，然后基于此继续工作。\n\n已准备好接收新消息。`
         : `[上下文已切换] 上一轮会话没有留下总结文件。已准备好接收新消息。`
       const reply = await this.sendTo(sessionKey, recoveryMessage, { _skipRotateWait: true })
-      this.core.logger.info('router', 'rotate-complete', { sessionKey, newSiaSession: this.sessions.get(sessionKey)?.symbiontSessionId })
+      this.core.logger.info('router', 'rotate-complete', { sessionKey, newSiaSession: this.sessions.get(sessionKey)?.siaSessionId })
 
       // 推送到飞书等外部渠道
       const pushHandler = this.pushHandlers.get(sessionKey)
@@ -445,7 +445,7 @@ export class Router {
       const fork = await this.core.forkManager.createFork({
         description,
         systemPrompt: forkSystemPrompt,
-        parentSessionId: session.symbiontSessionId,
+        parentSessionId: session.siaSessionId,
         processOptions: { cwd: ws.dir },
         persona: resolvedPersonaName,
       })
@@ -460,7 +460,7 @@ export class Router {
     const fork = await this.core.forkManager.createFork({
       description,
       systemPrompt: forkSystemPrompt,
-      parentSessionId: session.symbiontSessionId,
+      parentSessionId: session.siaSessionId,
       processOptions: { cwd: ws.dir },
       persona: resolvedPersonaName,
     })
@@ -491,7 +491,7 @@ export class Router {
     // 如果是话题 fork，把摘要推回父会话
     if (fork?.parentSessionId) {
       for (const [parentKey, parentSession] of this.sessions.entries()) {
-        if (parentSession.symbiontSessionId === fork.parentSessionId) {
+        if (parentSession.siaSessionId === fork.parentSessionId) {
           const pushHandler = this.pushHandlers.get(parentKey)
           if (pushHandler) {
             pushHandler(`📋 **专员完成**: ${fork.description}\n\n${summary}`)
@@ -515,7 +515,7 @@ export class Router {
   async dispatchWorker(description: string, systemPrompt?: string, isAsync?: boolean, persona?: string, callerSessionKeyOverride?: string): Promise<string> {
     const callerSessionKey = callerSessionKeyOverride ?? this.lastActiveSessionKey
     const session = this.sessions.get(callerSessionKey)
-    const parentSessionId = session?.symbiontSessionId ?? 'unknown'
+    const parentSessionId = session?.siaSessionId ?? 'unknown'
 
     // Persona resolution: explicit name > auto-match > default
     if (!systemPrompt) {
@@ -555,7 +555,7 @@ export class Router {
   }
 
   /**
-   * 工人完成后，将结果注入主 CC 实例的对话流，审核后推送给用户。
+   * 工人完成后，将结果注入主 CC 实例的对话流，让AI审核后推送。
    */
   private async injectWorkerResult(sessionKey: string, task: WorkerTask, result: WorkerResult): Promise<void> {
     const session = this.sessions.get(sessionKey)
@@ -566,14 +566,14 @@ export class Router {
 
     const truncatedResult = result.result.slice(0, 2000)
     const prompt = result.success
-      ? `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 已完成，耗时 ${Math.round((result.duration ?? 0) / 1000)}秒。\n\n结果：\n${truncatedResult}\n\nReview and send to user.`
-      : `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 失败。\n错误：${truncatedResult}\n\nPlease notify the user.`
+      ? `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 已完成，耗时 ${Math.round((result.duration ?? 0) / 1000)}秒。\n\n结果：\n${truncatedResult}\n\n请审核后总结发给user。`
+      : `[工人汇报] 任务「${task.description.slice(0, 50)}」(ID: ${task.id}) 失败。\n错误：${truncatedResult}\n\n请告知user。`
 
     try {
       const { result: ccReply } = await this.core.broker.sendPrompt(session.instanceId, prompt)
 
       this.core.eventStore.append({
-        type: 'chat', sessionId: session.symbiontSessionId,
+        type: 'chat', sessionId: session.siaSessionId,
         data: { role: 'assistant', content: ccReply },
       })
 
@@ -592,7 +592,7 @@ export class Router {
 
   addMemoryCard(card: Omit<ExperienceCard, 'id' | 'createdAt' | 'lastUsed'>, sessionKey: string): ExperienceCard {
     const session = this.sessions.get(sessionKey)
-    const currentSessionId = session?.symbiontSessionId ?? null
+    const currentSessionId = session?.siaSessionId ?? null
 
     if (currentSessionId && (!card.source || card.source.length === 0)) {
       const events = this.core.eventStore.read(currentSessionId)
@@ -625,13 +625,13 @@ export class Router {
   getTimeline(sessionKey: string = Router.TERMINAL_KEY): TimelineEntry[] {
     const session = this.sessions.get(sessionKey)
     if (!session) return []
-    return this.core.eventStore.getTimeline(session.symbiontSessionId)
+    return this.core.eventStore.getTimeline(session.siaSessionId)
   }
 
   getChildEvents(childSessionId: string, sessionKey: string = Router.TERMINAL_KEY): SiaEvent[] {
     const session = this.sessions.get(sessionKey)
     if (!session) return []
-    return this.core.eventStore.getChildEvents(session.symbiontSessionId, childSessionId)
+    return this.core.eventStore.getChildEvents(session.siaSessionId, childSessionId)
   }
 
   resolveCardSource(card: ExperienceCard): SiaEvent[] {
@@ -654,7 +654,7 @@ export class Router {
   async stop(): Promise<void> {
     // 休眠所有会话
     for (const session of this.sessions.values()) {
-      this.core.sessionManager.sleep(session.symbiontSessionId, session.sessionKey)
+      this.core.sessionManager.sleep(session.siaSessionId, session.sessionKey)
       // 休眠 CC 实例
       try {
         await this.core.broker.sleep(session.instanceId)

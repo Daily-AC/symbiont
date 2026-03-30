@@ -63,9 +63,9 @@ export class MemoryExtractor {
     const sessionId = turns[turns.length - 1].sessionId
 
     try {
-      // Load persona's soul prompt so the extraction worker has context for judging what to remember
+      // 加载AI的 soul prompt，让提炼 worker 有AI的价值观和对user的理解
       const soulContext = this.persona?.soulPrompt
-        ? `${this.persona.soulPrompt}\n\n---\nYou are now acting as a memory organizer. Use your understanding to judge what's worth remembering.\n`
+        ? `${this.persona.soulPrompt}\n\n---\n你现在的角色是记忆整理员。用你对user的理解来判断什么值得记住。\n`
         : 'You are a memory extraction worker. '
       const instance = await this.broker.spawn('worker', {
         systemPrompt: soulContext + 'Output JSON only.',
@@ -96,7 +96,7 @@ export class MemoryExtractor {
               confidence: parsed.confidence ?? 0.7,
               source: [sourceUri],
               connections: [],
-              owner: this.persona?.manifest?.name ?? 'default',
+              owner: 'default',
             })
             if (this.connector) {
               const connections = await this.connector.connect(card)

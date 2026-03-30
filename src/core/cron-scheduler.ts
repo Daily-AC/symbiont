@@ -28,6 +28,8 @@ export interface CronJob {
   createdAt: string
   /** 最近一次成功完成时间（用于重启补偿） */
   lastCompletedAt?: string
+  /** CC 执行超时（毫秒），不设则使用默认值 */
+  timeout?: number
 }
 
 export interface CronRun {

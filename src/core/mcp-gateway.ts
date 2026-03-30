@@ -52,8 +52,8 @@ interface TemporaryGrant {
 /**
  * 权限格式: "backend:tool"
  *   - "*" 或 "*:*"  → 所有后端所有工具
- *   - "symbiont-core:*"  → symbiont-core 后端所有工具
- *   - "symbiont-core:symbiont_remember" → 精确匹配
+ *   - "sia-core:*"  → sia-core 后端所有工具
+ *   - "sia-core:symbiont_remember" → 精确匹配
  *   - 向后兼容: "symbiont_*" (不含冒号) → 按工具名前缀匹配（旧格式）
  */
 export function matchesPattern(backendName: string, toolName: string, pattern: string): boolean {

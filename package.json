@@ -1,5 +1,5 @@
 {
-  "name": "symbiont",
+  "name": "sia",
   "version": "0.2.0",
   "description": "Sia - Personal AI assistant platform powered by Claude Code",
   "type": "module",
@@ -8,7 +8,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "以琳 & CC",
   "license": "MIT",
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

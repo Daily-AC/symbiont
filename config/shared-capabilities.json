@@ -1,10 +1,10 @@
 {
   "mcp": {
     "always_available": [
-      "symbiont-core:symbiont_remember",
-      "symbiont-core:symbiont_recall",
-      "symbiont-core:symbiont_update_memory",
-      "symbiont-core:symbiont_request_tool"
+      "sia-core:symbiont_remember",
+      "sia-core:symbiont_recall",
+      "sia-core:symbiont_update_memory",
+      "sia-core:symbiont_request_tool"
     ]
   },
   "skills": {

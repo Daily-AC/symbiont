@@ -1,6 +1,8 @@
 import type * as Lark from '@larksuiteoapi/node-sdk'
 import { getClient } from '../client.ts'
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 // ============ Helpers ============
 
 const BLOCK_TYPE_NAMES: Record<number, string> = {
@@ -115,8 +117,9 @@ async function convertMarkdownWithFallback(
     // deno-lint-ignore no-explicit-any
     const blocks: any[] = []
     const firstLevelBlockIds: string[] = []
-    for (const chunk of chunks) {
-      const converted = await convertMarkdownWithFallback(client, chunk, depth + 1)
+    for (let i = 0; i < chunks.length; i++) {
+      if (i > 0) await sleep(200)
+      const converted = await convertMarkdownWithFallback(client, chunks[i], depth + 1)
       blocks.push(...converted.blocks)
       firstLevelBlockIds.push(...converted.firstLevelBlockIds)
     }
@@ -129,8 +132,9 @@ async function chunkedConvertMarkdown(client: Lark.Client, markdown: string) {
   // deno-lint-ignore no-explicit-any
   const allBlocks: any[] = []
   const allFirstLevelBlockIds: string[] = []
-  for (const chunk of chunks) {
-    const { blocks, firstLevelBlockIds } = await convertMarkdownWithFallback(client, chunk)
+  for (let i = 0; i < chunks.length; i++) {
+    if (i > 0) await sleep(200)
+    const { blocks, firstLevelBlockIds } = await convertMarkdownWithFallback(client, chunks[i])
     const sorted = sortBlocksByFirstLevel(blocks, firstLevelBlockIds)
     allBlocks.push(...sorted)
     allFirstLevelBlockIds.push(...firstLevelBlockIds)
@@ -251,10 +255,11 @@ export async function insertBlocks(
     const { cleaned, skipped: _skipped } = cleanBlocksForInsert(sortedBlocks)
     // deno-lint-ignore no-explicit-any
     const allInserted: any[] = []
-    for (const block of cleaned) {
+    for (let i = 0; i < cleaned.length; i++) {
+      if (i > 0) await sleep(200)
       const res = await client.docx.documentBlockChildren.create({
         path: { document_id: documentId, block_id: blockId },
-        data: { children: [block] },
+        data: { children: [cleaned[i]] },
       })
       if (res.code !== 0) throw new Error(res.msg)
       allInserted.push(...(res.data?.children ?? []))

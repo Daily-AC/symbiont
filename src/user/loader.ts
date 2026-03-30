@@ -12,7 +12,7 @@ export interface UserProfile {
  * 加载 User Profile。
  * 独立于 Persona Pack — 换角色也知道用户是谁。
  *
- * Both the user and the AI persona can modify profiles, but core identity fields should be confirmed by the user.
+ * 权限：user和AI都能修改，但核心身份字段应由user确认。
  */
 export function loadUser(userDir: string): UserProfile {
   if (!existsSync(userDir)) {

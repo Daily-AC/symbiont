@@ -13,7 +13,7 @@ describe('E2E: Cron Scheduling', { timeout: 30_000 }, () => {
 
   before(() => {
     const logger = createTestLogger()
-    dataDir = mkdtempSync(join(tmpdir(), 'symbiont-cron-test-'))
+    dataDir = mkdtempSync(join(tmpdir(), 'sia-cron-test-'))
     triggerLog = []
     scheduler = new CronScheduler(dataDir, {
       logger,
@@ -104,6 +104,37 @@ describe('E2E: Cron Scheduling', { timeout: 30_000 }, () => {
     assert.ok(jobs.length >= 3, `Should restore jobs, got ${jobs.length}`)
     assert.ok(jobs.some(j => j.name === 'test-job'))
     scheduler2.stop()
+  })
+
+  test('addJob with timeout persists and reads back correctly', () => {
+    const job = scheduler.addJob({
+      name: 'timeout-test',
+      schedule: '0 3 * * *',
+      executor: 'cc',
+      prompt: 'long task',
+      enabled: true,
+      timeout: 60 * 60 * 1000, // 1 hour
+    })
+    assert.equal(job.timeout, 60 * 60 * 1000)
+
+    // Verify persistence: reload from disk
+    const logger = createTestLogger()
+    const scheduler2 = new CronScheduler(dataDir, { logger, onTrigger: () => {} })
+    const reloaded = scheduler2.getJob(job.id)
+    assert.ok(reloaded, 'Job should survive reload')
+    assert.equal(reloaded!.timeout, 60 * 60 * 1000, 'Timeout should persist')
+    scheduler2.stop()
+  })
+
+  test('addJob without timeout uses undefined (backward compatible)', () => {
+    const job = scheduler.addJob({
+      name: 'no-timeout-test',
+      schedule: '0 4 * * *',
+      executor: 'cc',
+      prompt: 'quick task',
+      enabled: true,
+    })
+    assert.equal(job.timeout, undefined, 'Timeout should be undefined when not set')
   })
 
   test('removeJob deletes and persists', () => {

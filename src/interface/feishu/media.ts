@@ -1,6 +1,6 @@
 import { getClient } from './client.ts'
 import { createReadStream, createWriteStream, statSync, renameSync, unlinkSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, basename } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
@@ -19,12 +19,13 @@ export async function uploadImage(filePath: string): Promise<string> {
   return imageKey
 }
 
-export async function uploadFile(filePath: string, fileName: string): Promise<string> {
+export async function uploadFile(filePath: string, fileName?: string): Promise<string> {
   const client = getClient()
+  const resolvedName = fileName || basename(filePath)
   const res: any = await client.im.file.create({
     data: {
       file_type: 'stream',
-      file_name: fileName,
+      file_name: resolvedName,
       file: createReadStream(filePath),
     },
   })

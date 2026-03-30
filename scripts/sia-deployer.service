@@ -1,0 +1,13 @@
+[Unit]
+Description=Sia Deployer Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/sia/scripts/deployer.sh
+Restart=always
+RestartSec=10
+Environment=SIA_DIR=%h/sia
+
+[Install]
+WantedBy=default.target
