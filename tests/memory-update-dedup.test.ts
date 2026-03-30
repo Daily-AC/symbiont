@@ -12,7 +12,7 @@ describe('updateCard', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-update-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-update-test-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
@@ -63,7 +63,7 @@ describe('Evolves auto-decay', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-decay-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-decay-test-'))
     db = new MemoryDB(dir)
     connector = new Connector({ db })
   })
@@ -120,7 +120,7 @@ describe('updateConfidence', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-conf-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-conf-test-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })

@@ -48,7 +48,7 @@ describe('recall', () => {
   let tmpDir: string
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-recall-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-recall-test-'))
     db = new MemoryDB(tmpDir)
   })
   after(() => { db.close(); rmSync(tmpDir, { recursive: true, force: true }) })

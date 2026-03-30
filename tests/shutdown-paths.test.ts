@@ -10,7 +10,7 @@ describe('shutdown-paths: sleepAll and session recovery', () => {
   let mgr: SessionManager
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-shutdown-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-shutdown-test-'))
     mgr = new SessionManager(dir)
   })
 

@@ -16,7 +16,7 @@ describe('MemoryExtractor', { timeout: 120_000 }, () => {
   let extractor: MemoryExtractor
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-extractor-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-extractor-'))
     db = new MemoryDB(dir)
     broker = new CCBroker({ maxConcurrent: { main: 1, specialist: 1, worker: 2 } })
     extractor = new MemoryExtractor(db, broker, createTestLogger(), { extractionInterval: 3 })

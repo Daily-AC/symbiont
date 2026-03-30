@@ -8,12 +8,12 @@ import { SymbiontCore } from '../src/core/symbiont-core.ts'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export function createTestLogger(): Logger {
-  const dir = mkdtempSync(join(tmpdir(), 'symbiont-test-'))
+  const dir = mkdtempSync(join(tmpdir(), 'sia-test-'))
   return new Logger(dir)
 }
 
 export function createTestCore(suffix?: string): { core: SymbiontCore; dataDir: string } {
-  const dataDir = mkdtempSync(join(tmpdir(), `symbiont-test-${suffix ?? ''}-`))
+  const dataDir = mkdtempSync(join(tmpdir(), `sia-test-${suffix ?? ''}-`))
   const core = new SymbiontCore({
     dataDir,
     personaPackDir: join(__dirname, '..', 'persona-example'),

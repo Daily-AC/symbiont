@@ -15,7 +15,7 @@ export interface LogEntry {
 /**
  * 结构化日志器。
  *
- * - NDJSON 文件（每天一个：symbiont-YYYY-MM-DD.ndjson）
+ * - NDJSON 文件（每天一个：sia-YYYY-MM-DD.ndjson）
  * - SYMBIONT_DEBUG 环境变量控制 stderr 输出
  * - 关键事件始终写文件，debug 级别只在 SYMBIONT_DEBUG 时输出
  */

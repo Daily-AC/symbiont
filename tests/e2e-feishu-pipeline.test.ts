@@ -25,7 +25,7 @@ import { Whitelist } from '../src/interface/feishu/whitelist.ts'
 import { MessageDedup } from '../src/interface/feishu/dedup.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const TEST_DATA = mkdtempSync(join(tmpdir(), 'symbiont-feishu-pipeline-'))
+const TEST_DATA = mkdtempSync(join(tmpdir(), 'sia-feishu-pipeline-'))
 
 const BOT_ID = 'bot_open_id_123'
 const BOT_NAME = 'TestBot'
@@ -99,6 +99,7 @@ describe('Feishu Message Pipeline', { timeout: 120_000 }, () => {
         return 'mock reply'
       },
       setPushHandlerFor: (_key: string, _handler: any) => {},
+      setTextHandlerFor: (_key: string, _handler: any) => {},
     }
   })
 
@@ -233,24 +234,24 @@ describe('Feishu Message Pipeline', { timeout: 120_000 }, () => {
   // ---- Test 7: thread message → sessionKey = topic:{chatId}:{threadId} ----
   test('thread message → sessionKey = topic:{chatId}:{threadId}', async () => {
     const chatId = 'chat_thread_test'
-    const rootId = 'root_msg_001'
+    const threadId = 'thread_001'
 
-    // p2p message with root_id (thread reply)
+    // p2p message with thread_id (real topic thread)
     const event = makeEvent({
       chatId,
       chatType: 'p2p',
       text: 'thread reply',
-      rootId,
+      threadId,
     })
 
     await handleFeishuMessage(event, makeDeps())
     assert.equal(routerCalls.length, 1)
-    assert.equal(routerCalls[0].sessionKey, `topic:${chatId}:${rootId}`)
+    assert.equal(routerCalls[0].sessionKey, `topic:${chatId}:${threadId}`)
 
     // Session map should record the thread
-    const mapping = sessionMap.get(`topic:${chatId}:${rootId}`)
+    const mapping = sessionMap.get(`topic:${chatId}:${threadId}`)
     assert.ok(mapping)
-    assert.equal(mapping!.threadId, rootId)
+    assert.equal(mapping!.threadId, threadId)
   })
 
   // ---- Test 8: thread_id takes precedence over root_id ----
@@ -284,6 +285,131 @@ describe('Feishu Message Pipeline', { timeout: 120_000 }, () => {
     const deletes = mock.getCalls('im.messageReaction.delete')
     assert.ok(creates.length >= 1, 'should add typing reaction')
     assert.ok(deletes.length >= 1, 'should remove typing reaction')
+  })
+
+  // ---- Test 11: merge_forward with image → downloads image ----
+  test('merge_forward with image sub-message → image is downloaded', async () => {
+    const chatId = 'chat_merge_img'
+    const mergeMessageId = 'msg_merge_forward_img_001'
+    const subImageMessageId = 'msg_sub_image_001'
+
+    // Override im.message.get to return sub-messages including an image
+    mock.setMessageGetOverride(async (params: any) => {
+      const reqMsgId = params?.path?.message_id
+      if (reqMsgId === mergeMessageId) {
+        return {
+          data: {
+            items: [
+              // First item is the merge_forward message itself (filtered out by parseMergeForward)
+              {
+                message_id: mergeMessageId,
+                msg_type: 'merge_forward',
+                sender: { id: 'user_001' },
+                body: { content: '' },
+              },
+              // Sub-message: text
+              {
+                message_id: 'msg_sub_text_001',
+                msg_type: 'text',
+                sender: { id: 'user_001' },
+                body: { content: JSON.stringify({ text: 'hello from merge' }) },
+              },
+              // Sub-message: image
+              {
+                message_id: subImageMessageId,
+                msg_type: 'image',
+                sender: { id: 'user_001' },
+                body: { content: JSON.stringify({ image_key: 'img-key-merge-001' }) },
+              },
+            ],
+          },
+        }
+      }
+      return { data: { items: [] } }
+    })
+
+    // Build a merge_forward event
+    const event = {
+      message: {
+        message_id: mergeMessageId,
+        chat_id: chatId,
+        chat_type: 'p2p',
+        message_type: 'merge_forward',
+        content: '',
+      },
+      sender: {
+        sender_id: { open_id: 'user_open_id_1' },
+      },
+    }
+
+    await handleFeishuMessage(event, makeDeps())
+
+    // router.sendTo should have been called with parsed merge content
+    assert.equal(routerCalls.length, 1)
+    const routedText = routerCalls[0].text
+
+    // Should contain the text sub-message
+    assert.ok(routedText.includes('hello from merge'), 'should include text sub-message')
+
+    // Should have attempted to download the image (im.messageResource.get called)
+    const resourceCalls = mock.getCalls('im.messageResource.get')
+    assert.ok(resourceCalls.length >= 1, 'should call messageResource.get to download image')
+
+    // The routed text should contain a file path for the image, not just [图片]
+    assert.ok(routedText.includes('[图片:'), 'should contain downloaded image path, not placeholder')
+    assert.ok(!routedText.includes('[图片]'), 'should NOT contain bare [图片] placeholder')
+  })
+
+  // ---- Test 12: merge_forward with image download failure → fallback text ----
+  test('merge_forward with image download failure → shows fallback', async () => {
+    const chatId = 'chat_merge_img_fail'
+    const mergeMessageId = 'msg_merge_forward_img_fail_001'
+
+    // Override im.message.get to return an image sub-message
+    mock.setMessageGetOverride(async (params: any) => {
+      const reqMsgId = params?.path?.message_id
+      if (reqMsgId === mergeMessageId) {
+        return {
+          data: {
+            items: [
+              {
+                message_id: mergeMessageId,
+                msg_type: 'merge_forward',
+                sender: { id: 'user_001' },
+                body: { content: '' },
+              },
+              {
+                message_id: 'msg_sub_image_bad',
+                msg_type: 'image',
+                sender: { id: 'user_001' },
+                body: { content: 'invalid-json{{{' },  // bad JSON → parse will fail
+              },
+            ],
+          },
+        }
+      }
+      return { data: { items: [] } }
+    })
+
+    const event = {
+      message: {
+        message_id: mergeMessageId,
+        chat_id: chatId,
+        chat_type: 'p2p',
+        message_type: 'merge_forward',
+        content: '',
+      },
+      sender: {
+        sender_id: { open_id: 'user_open_id_1' },
+      },
+    }
+
+    await handleFeishuMessage(event, makeDeps())
+
+    assert.equal(routerCalls.length, 1)
+    const routedText = routerCalls[0].text
+    // Should contain fallback text for failed image download
+    assert.ok(routedText.includes('[图片（下载失败）]'), 'should contain download failure fallback')
   })
 
   after(() => {

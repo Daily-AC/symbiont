@@ -168,9 +168,24 @@ async function parseMergeForward(messageId: string): Promise<string> {
           contentText = await parsePostContent(rawContent, { messageId: sub.message_id })
           break
         }
-        case 'image':
-          contentText = '[图片]'
+        case 'image': {
+          try {
+            const parsed = JSON.parse(rawContent)
+            const imageKey = parsed.image_key
+            if (imageKey) {
+              const destDir = join(process.cwd(), 'data', 'downloads')
+              mkdirSync(destDir, { recursive: true })
+              const filePath = await downloadMessageResource(messageId, imageKey, 'image', destDir)
+              contentText = `[图片: ${filePath}]`
+            } else {
+              contentText = '[图片]'
+            }
+          } catch (e) {
+            console.error('[feishu-handler] failed to download image in merge_forward:', e)
+            contentText = '[图片（下载失败）]'
+          }
           break
+        }
         case 'file': {
           try {
             const parsed = JSON.parse(rawContent)

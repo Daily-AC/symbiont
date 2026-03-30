@@ -15,9 +15,9 @@ emoji: "🔍"
 # MCP 工具权限
 mcp:
   tools:
-    - "symbiont-core:symbiont_remember"
-    - "symbiont-core:symbiont_recall"
-    - "symbiont-core:symbiont_report_issue"
+    - "sia-core:symbiont_remember"
+    - "sia-core:symbiont_recall"
+    - "sia-core:symbiont_report_issue"
 
 # CC skill 权限
 skills:

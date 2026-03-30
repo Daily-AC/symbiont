@@ -11,19 +11,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 function createTestGateway(port: number, overrides?: Partial<GatewayConfig>): McpGateway {
   return new McpGateway({
     port,
-    configDir: '/tmp/symbiont-test-config-' + Date.now(),
+    configDir: '/tmp/sia-test-config-' + Date.now(),
     getRoleForSession: (sk) => {
-      if (sk.startsWith('dm:')) return { role: 'main', persona: 'xiaoxi' }
+      if (sk.startsWith('dm:')) return { role: 'main', persona: 'default' }
       if (sk.startsWith('topic:')) return { role: 'specialist', persona: 'code-reviewer' }
       if (sk === 'worker') return { role: 'worker', persona: 'default' }
       return undefined
     },
     getToolWhitelist: (persona) => {
-      if (persona === 'xiaoxi') return ['*']
-      if (persona === 'code-reviewer') return ['symbiont-core:symbiont_remember', 'symbiont-core:symbiont_recall', 'symbiont-core:symbiont_report_issue']
-      return ['symbiont-core:*']
+      if (persona === 'default') return ['*']
+      if (persona === 'code-reviewer') return ['sia-core:symbiont_remember', 'sia-core:symbiont_recall', 'sia-core:symbiont_report_issue']
+      return ['sia-core:*']
     },
-    getSharedTools: () => ['symbiont-core:symbiont_remember', 'symbiont-core:symbiont_recall'],
+    getSharedTools: () => ['sia-core:symbiont_remember', 'sia-core:symbiont_recall'],
     ...overrides,
   })
 }
@@ -63,15 +63,15 @@ describe('matchesPattern — backend:tool two-layer matching', () => {
   })
 
   test('"backend:*" matches all tools in backend', () => {
-    assert.ok(matchesPattern('symbiont-core', 'symbiont_remember', 'symbiont-core:*'))
-    assert.ok(matchesPattern('symbiont-core', 'symbiont_dispatch_worker', 'symbiont-core:*'))
-    assert.ok(!matchesPattern('symbiont-feishu', 'feishu_send_message', 'symbiont-core:*'))
+    assert.ok(matchesPattern('symbiont-core', 'symbiont_remember', 'sia-core:*'))
+    assert.ok(matchesPattern('symbiont-core', 'symbiont_dispatch_worker', 'sia-core:*'))
+    assert.ok(!matchesPattern('symbiont-feishu', 'feishu_send_message', 'sia-core:*'))
   })
 
   test('"backend:tool" exact match', () => {
-    assert.ok(matchesPattern('symbiont-core', 'symbiont_remember', 'symbiont-core:symbiont_remember'))
-    assert.ok(!matchesPattern('symbiont-core', 'symbiont_recall', 'symbiont-core:symbiont_remember'))
-    assert.ok(!matchesPattern('symbiont-feishu', 'symbiont_remember', 'symbiont-core:symbiont_remember'))
+    assert.ok(matchesPattern('symbiont-core', 'symbiont_remember', 'sia-core:symbiont_remember'))
+    assert.ok(!matchesPattern('symbiont-core', 'symbiont_recall', 'sia-core:symbiont_remember'))
+    assert.ok(!matchesPattern('symbiont-feishu', 'symbiont_remember', 'sia-core:symbiont_remember'))
   })
 
   test('"*:tool" matches tool in any backend', () => {
@@ -81,9 +81,9 @@ describe('matchesPattern — backend:tool two-layer matching', () => {
   })
 
   test('"backend:prefix*" wildcard within backend', () => {
-    assert.ok(matchesPattern('symbiont-feishu', 'feishu_send_message', 'symbiont-feishu:feishu_*'))
-    assert.ok(matchesPattern('symbiont-feishu', 'feishu_create_doc', 'symbiont-feishu:feishu_*'))
-    assert.ok(!matchesPattern('symbiont-core', 'symbiont_remember', 'symbiont-feishu:feishu_*'))
+    assert.ok(matchesPattern('symbiont-feishu', 'feishu_send_message', 'sia-feishu:feishu_*'))
+    assert.ok(matchesPattern('symbiont-feishu', 'feishu_create_doc', 'sia-feishu:feishu_*'))
+    assert.ok(!matchesPattern('symbiont-core', 'symbiont_remember', 'sia-feishu:feishu_*'))
   })
 
   test('backward compat: "symbiont_*" (no colon) matches by tool name', () => {
@@ -104,13 +104,13 @@ describe('Persona fallback — unknown persona gets only shared tools', () => {
   test('getToolWhitelist returns empty for unknown persona', () => {
     const gw = createTestGateway(0, {
       getToolWhitelist: (persona) => {
-        if (persona === 'xiaoxi') return ['*']
-        if (persona === 'code-reviewer') return ['symbiont-core:symbiont_remember', 'symbiont-core:symbiont_recall', 'symbiont-core:symbiont_report_issue']
+        if (persona === 'default') return ['*']
+        if (persona === 'code-reviewer') return ['sia-core:symbiont_remember', 'sia-core:symbiont_recall', 'sia-core:symbiont_report_issue']
         return []
       },
       getRoleForSession: (sk) => {
         if (sk === 'unknown-session') return { role: 'worker', persona: 'mystery-persona' }
-        if (sk.startsWith('dm:')) return { role: 'main', persona: 'xiaoxi' }
+        if (sk.startsWith('dm:')) return { role: 'main', persona: 'default' }
         return undefined
       },
     })
@@ -126,7 +126,7 @@ describe('Persona fallback — unknown persona gets only shared tools', () => {
     const gw = createTestGateway(0, {
       getToolWhitelist: (persona) => {
         calledPersona = persona
-        if (persona === 'xiaoxi') return ['*']
+        if (persona === 'default') return ['*']
         return []
       },
       getRoleForSession: (sk) => {
@@ -159,7 +159,7 @@ describe('loadSharedCapabilities', () => {
   test('loads from config dir', () => {
     const caps = loadSharedCapabilities(join(__dirname, '..', 'config'))
     assert.ok(Array.isArray(caps.mcp.always_available))
-    assert.ok(caps.mcp.always_available.includes('symbiont-core:symbiont_remember'))
+    assert.ok(caps.mcp.always_available.includes('sia-core:symbiont_remember'))
   })
 
   test('returns empty for nonexistent dir', () => {

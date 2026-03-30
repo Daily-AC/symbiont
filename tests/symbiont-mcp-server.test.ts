@@ -269,7 +269,7 @@ describe('WorkspaceManager MCP URL with sessionKey', () => {
     const { fileURLToPath } = await import('node:url')
     const __dirname = dirname(fileURLToPath(import.meta.url))
 
-    const tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-ws-test-'))
+    const tmpDir = mkdtempSync(join(tmpdir(), 'sia-ws-test-'))
     after(() => rmSync(tmpDir, { recursive: true }))
 
     const wm = new WorkspaceManager(tmpDir, createTestLogger())
@@ -282,7 +282,7 @@ describe('WorkspaceManager MCP URL with sessionKey', () => {
     const ws = wm.ensure('feishu:topic123', persona, user, 'test task')
     const mcpJson = JSON.parse(readFileSync(join(ws.dir, '.mcp.json'), 'utf-8'))
 
-    assert.ok(mcpJson.mcpServers['symbiont-core'], 'should have symbiont-core MCP entry')
+    assert.ok(mcpJson.mcpServers['symbiont-core'], 'should have sia-core MCP entry')
     const url = mcpJson.mcpServers['symbiont-core'].url
     assert.ok(url.includes('?sk='), 'URL should contain ?sk= param')
     assert.ok(url.includes('feishu%3Atopic123'), 'URL should contain encoded sessionKey')
@@ -298,7 +298,7 @@ describe('WorkspaceManager MCP URL with sessionKey', () => {
     const { fileURLToPath } = await import('node:url')
     const __dirname = dirname(fileURLToPath(import.meta.url))
 
-    const tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-ws-test2-'))
+    const tmpDir = mkdtempSync(join(tmpdir(), 'sia-ws-test2-'))
     after(() => rmSync(tmpDir, { recursive: true }))
 
     const wm = new WorkspaceManager(tmpDir, createTestLogger())
@@ -371,7 +371,7 @@ function createStubHandler(opts?: { onCreateFork?: (desc: string, sk?: string, c
     issueList: () => [],
     updateIssue: () => ({ id: 'issue-1', title: 'test', status: 'investigating' }),
     closeIssue: () => ({ id: 'issue-1', title: 'test', status: 'resolved' }),
-    taskAdd: () => ({ id: 'task-1', title: 'test', status: 'todo', assignee: 'xiaoxi', priority: 'normal' }),
+    taskAdd: () => ({ id: 'task-1', title: 'test', status: 'todo', assignee: 'default', priority: 'normal' }),
     taskUpdate: () => undefined,
     taskList: () => [],
     changelog: () => [],

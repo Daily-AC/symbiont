@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), 'symbiont-phase4-test-' + randomUUID().slice(0, 8))
+  const dir = join(tmpdir(), 'sia-phase4-test-' + randomUUID().slice(0, 8))
   mkdirSync(dir, { recursive: true })
   return dir
 }
@@ -23,11 +23,11 @@ describe('Gateway Temporary Grants', () => {
       port: 0,
       getRoleForSession: (sk) => {
         if (sk === 'worker-1') return { role: 'worker', persona: 'default' }
-        if (sk === 'main') return { role: 'main', persona: 'xiaoxi' }
+        if (sk === 'main') return { role: 'main', persona: 'default' }
         return undefined
       },
       getToolWhitelist: (persona) => {
-        if (persona === 'xiaoxi') return ['*']
+        if (persona === 'default') return ['*']
         return ['symbiont_remember', 'symbiont_recall']
       },
       getSharedTools: () => ['symbiont_remember', 'symbiont_recall'],

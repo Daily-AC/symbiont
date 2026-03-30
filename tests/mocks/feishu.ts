@@ -6,7 +6,18 @@ export interface FeishuCall {
 export function createMockFeishuClient() {
   const calls: FeishuCall[] = []
 
+  // Allow tests to override im.message.get responses
+  let messageGetOverride: ((params: any) => Promise<any>) | null = null
+
   const client = {
+    contact: {
+      user: {
+        get: async (params: any) => {
+          calls.push({ method: 'contact.user.get', args: [params] })
+          return { data: { user: { name: 'MockUser' } } }
+        },
+      },
+    },
     im: {
       message: {
         create: async (params: any) => {
@@ -19,6 +30,7 @@ export function createMockFeishuClient() {
         },
         get: async (params: any) => {
           calls.push({ method: 'im.message.get', args: [params] })
+          if (messageGetOverride) return messageGetOverride(params)
           return { data: { items: [] } }
         },
         patch: async (params: any) => {
@@ -29,8 +41,12 @@ export function createMockFeishuClient() {
       messageResource: {
         get: async (params: any) => {
           calls.push({ method: 'im.messageResource.get', args: [params] })
-          const { Readable } = await import('node:stream')
-          return { data: Readable.from(Buffer.from('mock-file-content')) }
+          return {
+            writeFile: async (destPath: string) => {
+              const { writeFileSync } = await import('node:fs')
+              writeFileSync(destPath, 'mock-file-content')
+            },
+          }
         },
       },
       chat: {
@@ -58,6 +74,9 @@ export function createMockFeishuClient() {
     getCalls(method: string): FeishuCall[] {
       return calls.filter(c => c.method === method)
     },
-    reset() { calls.length = 0 },
+    setMessageGetOverride(fn: ((params: any) => Promise<any>) | null) {
+      messageGetOverride = fn
+    },
+    reset() { calls.length = 0; messageGetOverride = null },
   }
 }

@@ -10,7 +10,7 @@ describe('CardStore', () => {
   let tempDir: string
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'symbiont-cards-'))
+    tempDir = mkdtempSync(join(tmpdir(), 'sia-cards-'))
     store = new CardStore(tempDir)
   })
 

@@ -13,7 +13,7 @@ describe('Issue Comments', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-issue-comments-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-issue-comments-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
@@ -32,12 +32,12 @@ describe('Issue Comments', () => {
   test('updateIssue with comment appends to comments array', () => {
     const issue = db.addIssue('内存泄漏问题')
     const updated = db.updateIssue(issue.id, {
-      comment: { author: 'xiaoxi', content: '已重现该问题' },
+      comment: { author: 'default', content: '已重现该问题' },
     })
     assert.ok(updated)
     const comments = JSON.parse(updated!.comments as unknown as string || '[]')
     assert.equal(comments.length, 1)
-    assert.equal(comments[0].author, 'xiaoxi')
+    assert.equal(comments[0].author, 'default')
     assert.equal(comments[0].content, '已重现该问题')
     assert.ok(comments[0].created_at, 'comment should have created_at')
   })
@@ -46,13 +46,13 @@ describe('Issue Comments', () => {
     const issue = db.addIssue('多评论测试')
 
     db.updateIssue(issue.id, {
-      comment: { author: 'xiaoxi', content: '第一条评论' },
+      comment: { author: 'default', content: '第一条评论' },
     })
     db.updateIssue(issue.id, {
       comment: { author: 'cc', content: '第二条评论' },
     })
     db.updateIssue(issue.id, {
-      comment: { author: 'xiaoxi', content: '第三条评论' },
+      comment: { author: 'default', content: '第三条评论' },
     })
 
     const fetched = db.getIssues().find(i => i.id === issue.id)
@@ -126,7 +126,7 @@ describe('Activity session_id', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-activity-session-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-activity-session-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })

@@ -364,7 +364,7 @@
     var data = await api('/api/overview')
     if (!data) {
       document.getElementById('overview-content').innerHTML =
-        '<p class="ink-faint">无法连接到 Symbiont</p>'
+        '<p class="ink-faint">无法连接到 Sia</p>'
       return
     }
     renderOverview(data)
@@ -610,7 +610,7 @@
         (c.scene ? '<span class="card-scene">' + escHtml(c.scene) + '</span>' : '') +
         (c.tags || []).map(function (t) { return '<span class="card-tag">' + escHtml(t) + '</span>' }).join('') +
         '<span class="card-time">' + relativeTime(c.createdAt || c.created_at) + '</span>' +
-        (c.owner ? '<span class="card-owner">' + escHtml(c.owner === 'shared' ? 'Shared' : c.owner) + '</span>' : '') +
+        (c.owner ? '<span class="card-owner">' + escHtml(c.owner === 'default' ? 'AI' : c.owner === 'shared' ? '共享' : c.owner) + '</span>' : '') +
         '</div>' +
         '</div>' +
         '<div class="card-right">' +
@@ -655,7 +655,7 @@
     var cur = ownerEl.value
     var opts = '<option value="">全部归属</option>'
     Array.from(owners).sort().forEach(function (o) {
-      var label = o === 'shared' ? 'Shared' : o
+      var label = o === 'default' ? 'AI' : o === 'shared' ? '共享知识' : o
       opts += '<option value="' + escAttr(o) + '">' + escHtml(label) + '</option>'
     })
     ownerEl.innerHTML = opts
@@ -1148,7 +1148,7 @@
         state === 'sleeping' ? 'idle' :
         state === 'zombie' ? 'error' : 'idle'
       var detailId = 'inst-detail-' + inst.id.replace(/[^a-z0-9]/gi, '-')
-      var convId = inst.symbiontSessionId ? 'inst-conv-' + inst.id.replace(/[^a-z0-9]/gi, '-') : null
+      var convId = inst.siaSessionId ? 'inst-conv-' + inst.id.replace(/[^a-z0-9]/gi, '-') : null
       var depthClass = depth > 0 ? ' instance-child' : ''
 
       var termId = 'inst-term-' + inst.id.replace(/[^a-z0-9]/gi, '-')
@@ -1209,7 +1209,7 @@
       s += '<button class="instance-detail-btn" data-detail="' + detailId + '">\u8BE6\u60C5</button>'
       s += '<button class="instance-detail-btn instance-term-btn" data-term="' + termId + '" data-inst-id="' + escHtml(inst.id) + '">\u65E5\u5FD7</button>'
       if (convId) {
-        s += '<button class="instance-detail-btn instance-conv-btn" data-conv="' + convId + '" data-symbiont-session="' + escHtml(inst.symbiontSessionId) + '">\u5BF9\u8BDD</button>'
+        s += '<button class="instance-detail-btn instance-conv-btn" data-conv="' + convId + '" data-sia-session="' + escHtml(inst.siaSessionId) + '">\u5BF9\u8BDD</button>'
       }
       s += '</div>'
       s += '</div>' // .instance-row
@@ -1287,7 +1287,7 @@
     container.querySelectorAll('.instance-conv-btn').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         var convId = btn.getAttribute('data-conv')
-        var siaSession = btn.getAttribute('data-symbiont-session')
+        var siaSession = btn.getAttribute('data-sia-session')
         var panel = document.getElementById(convId)
         if (!panel) return
 
@@ -1745,7 +1745,7 @@
     html += '<div class="task-meta">'
     html += '<span class="task-priority ' + (t.priority || 'normal') + '">' +
       (priorityLabels[t.priority] || t.priority || '普通') + '</span>'
-    html += '<span class="task-assignee">' + escHtml(assigneeLabels[t.assignee] || t.assignee || 'default') + '</span>'
+    html += '<span class="task-assignee">' + escHtml(t.assignee) + '</span>'
     if (t.due_date) {
       html += '<span class="task-due' + (isOverdue ? ' overdue' : '') + '">'
       html += (isOverdue ? '已过期 ' : '截止 ') + escHtml(t.due_date)
@@ -1818,7 +1818,7 @@
     document.getElementById('task-edit-title').textContent = taskId ? '编辑任务' : '新建任务'
     document.getElementById('task-input-title').value = ''
     document.getElementById('task-input-desc').value = ''
-    document.getElementById('task-input-assignee').value = ''
+    document.getElementById('task-input-assignee').value = 'default'
     document.getElementById('task-input-priority').value = 'normal'
     document.getElementById('task-input-due').value = ''
 
@@ -1830,7 +1830,7 @@
         if (!t) return
         document.getElementById('task-input-title').value = t.title || ''
         document.getElementById('task-input-desc').value = t.description || ''
-        document.getElementById('task-input-assignee').value = t.assignee || ''
+        document.getElementById('task-input-assignee').value = t.assignee || 'default'
         document.getElementById('task-input-priority').value = t.priority || 'normal'
         document.getElementById('task-input-due').value = t.due_date ? t.due_date.slice(0, 10) : ''
       })

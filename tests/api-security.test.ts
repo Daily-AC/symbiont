@@ -32,7 +32,7 @@ describe('Token auth for mutating requests', () => {
   const ORIGINAL_TOKEN = process.env.SYMBIONT_DASHBOARD_TOKEN
 
   before(async () => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-sec-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-sec-'))
     db = new MemoryDB(join(tmpDir, 'test.db'))
     const s = await startTestServer(db)
     server = s.server; base = s.base
@@ -129,7 +129,7 @@ describe('Request body size limit', () => {
 
   before(async () => {
     delete process.env.SYMBIONT_DASHBOARD_TOKEN // disable auth for these tests
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-sec-body-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-sec-body-'))
     db = new MemoryDB(join(tmpDir, 'test.db'))
     const s = await startTestServer(db)
     server = s.server; base = s.base
@@ -176,7 +176,7 @@ describe('parseInt limit cap at 1000', () => {
 
   before(async () => {
     delete process.env.SYMBIONT_DASHBOARD_TOKEN
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-sec-limit-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-sec-limit-'))
     db = new MemoryDB(join(tmpDir, 'test.db'))
     const s = await startTestServer(db)
     server = s.server; base = s.base

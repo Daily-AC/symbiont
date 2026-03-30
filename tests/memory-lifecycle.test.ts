@@ -14,7 +14,7 @@ describe('MemoryLifecycle', () => {
   let lifecycle: MemoryLifecycle
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-lifecycle-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-lifecycle-'))
     db = new MemoryDB(dir)
     lifecycle = new MemoryLifecycle(db, createTestLogger(), { gracePeriodDays: 0, timeoutDays: 0 })
   })

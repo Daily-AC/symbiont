@@ -10,7 +10,7 @@ describe('SessionManager', () => {
   let mgr: SessionManager
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-test-'))
     mgr = new SessionManager(dir)
   })
 

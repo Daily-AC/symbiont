@@ -28,7 +28,7 @@ describe('Connector', () => {
   let tmpDir: string
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-test-'))
     db = new MemoryDB(tmpDir)
     connector = new Connector({ db })
   })

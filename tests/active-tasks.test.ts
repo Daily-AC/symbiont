@@ -11,13 +11,13 @@ describe('active_tasks CRUD', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-active-tasks-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-active-tasks-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
 
   test('addActiveTask and getActiveTasks', () => {
-    db.addActiveTask('w1', 'worker', '部署新版本', 'xiaoxi', 'session-123')
+    db.addActiveTask('w1', 'worker', '部署新版本', 'default', 'session-123')
     db.addActiveTask('f1', 'fork', '调试问题', undefined, 'session-456')
 
     const all = db.getActiveTasks()
@@ -28,7 +28,7 @@ describe('active_tasks CRUD', () => {
     assert.equal(running[0].id, 'w1')
     assert.equal(running[0].type, 'worker')
     assert.equal(running[0].description, '部署新版本')
-    assert.equal(running[0].persona, 'xiaoxi')
+    assert.equal(running[0].persona, 'default')
     assert.equal(running[0].parent_session_key, 'session-123')
     assert.equal(running[1].id, 'f1')
     assert.equal(running[1].persona, undefined)
@@ -83,14 +83,14 @@ describe('restart recovery simulation', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-recovery-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-recovery-'))
     db = new MemoryDB(dir)
   })
   after(() => { db.close(); rmSync(dir, { recursive: true, force: true }) })
 
   test('simulate restart: mark running as interrupted, then process', () => {
     // 模拟重启前有 2 个 worker + 1 个 fork 在运行
-    db.addActiveTask('w-pre-1', 'worker', 'worker任务1', 'xiaoxi', 'dm-1')
+    db.addActiveTask('w-pre-1', 'worker', 'worker任务1', 'default', 'dm-1')
     db.addActiveTask('w-pre-2', 'worker', 'worker任务2', undefined, 'dm-2')
     db.addActiveTask('f-pre-1', 'fork', 'fork任务1', undefined, 'dm-3')
 

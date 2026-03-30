@@ -248,7 +248,7 @@ export class WorkspaceManager {
       const m = persona.manifest
       parts.push(`---\n\n## 工作边界\n\n` +
         `可自由修改：${m.permissions.writable.join(', ')}\n\n` +
-        `受保护（confirm before modifying）：${m.permissions.protected.join(', ')}`)
+        `受保护（修改前跟user确认）：${m.permissions.protected.join(', ')}`)
     }
 
     if (taskDescription) {

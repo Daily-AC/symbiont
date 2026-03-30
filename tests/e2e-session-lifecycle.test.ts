@@ -53,9 +53,9 @@ describe('E2E: Session Lifecycle', { timeout: 180_000 }, () => {
     // capture for later phases
     const routerSession = router.getSession('terminal')
     assert.ok(routerSession, 'router should have terminal session')
-    firstSiaSessionId = routerSession!.symbiontSessionId
+    firstSiaSessionId = routerSession!.siaSessionId
     firstCcSessionId = sessions[0].ccSessionId
-    console.log(`  [Phase 1] symbiontSessionId=${firstSiaSessionId}, ccSessionId=${firstCcSessionId}`)
+    console.log(`  [Phase 1] siaSessionId=${firstSiaSessionId}, ccSessionId=${firstCcSessionId}`)
   })
 
   // ---- Phase 2: stop() marks sessions as sleeping ----
@@ -83,9 +83,9 @@ describe('E2E: Session Lifecycle', { timeout: 180_000 }, () => {
     // The router should have recovered the session
     const session2 = router2.getSession('terminal')
     assert.ok(session2, 'new router should have a terminal session')
-    // The symbiontSessionId should be the same (recovered, not new)
-    assert.equal(session2!.symbiontSessionId, firstSiaSessionId,
-      'recovered session should have the same symbiontSessionId')
+    // The siaSessionId should be the same (recovered, not new)
+    assert.equal(session2!.siaSessionId, firstSiaSessionId,
+      'recovered session should have the same siaSessionId')
 
     // Verify we can still interact
     const reply = await router2.sendTo(Router.TERMINAL_KEY, 'Reply with exactly: RECOVERED_OK')

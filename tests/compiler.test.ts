@@ -24,7 +24,7 @@ describe('Compiler', () => {
   let personaPacksDir: string
 
   before(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'symbiont-compiler-test-'))
+    tmpDir = mkdtempSync(join(tmpdir(), 'sia-compiler-test-'))
     db = new MemoryDB(join(tmpDir, 'data'))
 
     personaDir = join(tmpDir, 'persona-example')
@@ -33,7 +33,7 @@ describe('Compiler', () => {
 
     // Create persona dirs with identity.md
     mkdirSync(join(personaDir, 'soul'), { recursive: true })
-    writeFileSync(join(personaDir, 'soul', 'identity.md'), `# Echo\n\n## Personality\n\nCurious and thoughtful\n`, 'utf8')
+    writeFileSync(join(personaDir, 'soul', 'identity.md'), `# AI\n\n## 性格\n\n活泼开朗\n`, 'utf8')
 
     mkdirSync(ccMemoryDir, { recursive: true })
     mkdirSync(personaPacksDir, { recursive: true })
@@ -59,8 +59,8 @@ describe('Compiler', () => {
     assert.ok(content.includes('## 编译知识'))
     assert.ok(content.includes('遇到问题先搜社区'))
     // Original content preserved
-    assert.ok(content.includes('# Echo'))
-    assert.ok(content.includes('Curious and thoughtful'))
+    assert.ok(content.includes('# AI'))
+    assert.ok(content.includes('活泼开朗'))
   })
 
   test('compile to identity: appends to existing 编译知识 section', () => {

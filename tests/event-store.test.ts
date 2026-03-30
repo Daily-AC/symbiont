@@ -11,7 +11,7 @@ describe('EventStore', () => {
   let db: MemoryDB
 
   beforeEach(() => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'symbiont-test-'))
+    const tempDir = mkdtempSync(join(tmpdir(), 'sia-test-'))
     db = new MemoryDB(tempDir)
     store = new EventStore(db)
   })

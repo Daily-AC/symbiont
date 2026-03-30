@@ -38,7 +38,7 @@ export interface ForkSession {
 /**
  * 交互分叉管理器（专员）
  *
- * 专员是主 Agent 的分身，处理复杂任务时分叉出来进行深度对话。
+ * 专员是主 Agent 的分身，处理复杂任务时分叉出来跟user深度对话。
  * 完成后生成摘要 + 索引回传主 Agent 的事件流。
  *
  * 规则：
@@ -60,7 +60,7 @@ export class ForkManager {
 
   /**
    * 创建交互分叉（专员）。
-   * 分叉出一个独立的 CC 实例，进行深度对话。
+   * 分叉出一个独立的 CC 实例，跟user深度对话。
    */
   async createFork(config: ForkConfig): Promise<ForkSession> {
     const forkId = `fork-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -91,7 +91,7 @@ export class ForkManager {
   }
 
   /**
-   * 向专员发送消息（用户 → 专员对话）。
+   * 向专员发送消息（user → 专员对话）。
    */
   async sendToFork(forkId: string, message: string): Promise<string> {
     const fork = this.forks.get(forkId)

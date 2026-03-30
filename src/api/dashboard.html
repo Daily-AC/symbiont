@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Symbiont — 系统监控</title>
+<title>Sia — 系统监控</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-logo">🌻</span>
-      <h1 class="sidebar-title">Symbiont</h1>
+      <h1 class="sidebar-title">Sia</h1>
     </div>
 
     <nav class="sidebar-nav" id="tabs">
@@ -71,7 +71,8 @@
         </select>
         <select id="mem-owner" class="mem-select">
           <option value="">全部归属</option>
-          <option value="shared">Shared</option>
+          <option value="default">AI</option>
+          <option value="shared">共享知识</option>
         </select>
       </div>
       <div class="memory-layout">
@@ -114,6 +115,8 @@
         </select>
         <select id="task-assignee-filter" class="mem-select">
           <option value="">全部指派</option>
+          <option value="default">AI</option>
+          <option value="user">user</option>
         </select>
         <button class="action-btn" id="task-add-btn" style="margin-left:auto">新建任务</button>
       </div>
@@ -124,7 +127,10 @@
           <input id="task-input-title" class="mem-input" placeholder="任务标题" style="width:100%;margin-bottom:8px">
           <textarea id="task-input-desc" rows="3" class="mem-input" placeholder="任务描述（可选）" style="width:100%;margin-bottom:8px;resize:vertical"></textarea>
           <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input id="task-input-assignee" class="mem-input" style="flex:1" placeholder="Assignee (optional)">
+            <select id="task-input-assignee" class="mem-select" style="flex:1">
+              <option value="default">AI</option>
+              <option value="user">user</option>
+            </select>
             <select id="task-input-priority" class="mem-select" style="flex:1">
               <option value="low">低</option>
               <option value="normal" selected>普通</option>

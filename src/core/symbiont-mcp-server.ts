@@ -2,7 +2,7 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import { createMcpHttpServer, type McpHttpServerHandle } from './mcp-transport.ts'
 import type { Logger } from './logger.ts'
 
-export type { McpHttpServerHandle as SiaMcpServerHandle } from './mcp-transport.ts'
+export type { McpHttpServerHandle as SymbiontMcpServerHandle } from './mcp-transport.ts'
 
 /** Coerce tags from MCP args to string[] (handles string, array, undefined) */
 function coerceTags(raw: unknown): string[] {
@@ -22,7 +22,7 @@ function coerceTags(raw: unknown): string[] {
   return []
 }
 
-export interface SiaMcpToolHandler {
+export interface SymbiontMcpToolHandler {
   dispatchWorker: (description: string, systemPrompt?: string, allowedTools?: string[], isAsync?: boolean, persona?: string, sessionKey?: string) => Promise<string>
   createFork: (description: string, sessionKey?: string, createTopic?: boolean, persona?: string) => Promise<{ id: string }>
   completeFork: (summary: string, sessionKey?: string) => Promise<void>
@@ -35,7 +35,7 @@ export interface SiaMcpToolHandler {
   getSystemLogs: (lines?: number) => string
   reload: (sessionKey: string, reason: string) => void
   scheduleRestart: (reason: string) => void
-  cronAdd: (name: string, schedule: string, prompt: string, options?: { timezone?: string; oneShot?: boolean }) => { id: string; nextRun?: string }
+  cronAdd: (name: string, schedule: string, prompt: string, options?: { timezone?: string; oneShot?: boolean; timeout?: number }) => { id: string; nextRun?: string }
   cronList: () => Array<{ id: string; name: string; schedule: string; enabled: boolean; nextRun?: string }>
   cronRemove: (id: string) => boolean
   personaList: () => Array<{ name: string; description: string; tags: string[] }>
@@ -68,6 +68,7 @@ export interface SiaMcpToolHandler {
   listGatewayBackends: () => Array<{ name: string; url: string; tools: string[] }>
   addBackend: (name: string, url: string, description?: string) => Promise<{ tools: string[] }>
   removeBackend: (name: string) => boolean
+  evolve: (description: string) => Promise<{ success: boolean; result: string }>
 }
 
 const toolDefinitions = [
@@ -171,7 +172,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_reload',
-    description: '重启 Symbiont。修改了 MCP 配置时只重启 CC 实例（快，3 秒）；涉及 Symbiont 源码变更时重启整个 Symbiont Core（5 秒，会短暂断连但 systemd 自动恢复）。',
+    description: '重启 Sia。修改了 MCP 配置时只重启 CC 实例（快，3 秒）；涉及 Symbiont 源码变更时重启整个 Symbiont Core（5 秒，会短暂断连但 systemd 自动恢复）。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -187,11 +188,12 @@ const toolDefinitions = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        name: { type: 'string', description: '任务名称（如"send a reminder"）' },
+        name: { type: 'string', description: '任务名称（如"叫user起床"）' },
         schedule: { type: 'string', description: '标准 cron 表达式（如 "0 8 * * *" = 每天 8 点，"*/30 * * * *" = 每 30 分钟）' },
         prompt: { type: 'string', description: '触发时执行的 prompt（发给你自己处理）' },
         timezone: { type: 'string', description: '时区，默认 Asia/Shanghai' },
         one_shot: { type: 'boolean', description: '是否一次性任务（执行后自动删除），默认 false' },
+        timeout: { type: 'number', description: 'CC 执行超时（毫秒），默认 30 分钟（1800000）。复杂任务可设更大值。' },
       },
       required: ['name', 'schedule', 'prompt'],
     },
@@ -276,7 +278,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_wish',
-    description: 'Make a wish (feature request, improvement, etc.). Wishes appear on the dashboard, awaiting approval or rejection.',
+    description: '许愿池：向user许一个愿望（功能请求、想要的改进、希望学会的东西等）。愿望会出现在监控看板上，等待user批准或拒绝。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -318,7 +320,7 @@ const toolDefinitions = [
       properties: {
         title: { type: 'string', description: '任务标题' },
         description: { type: 'string', description: '任务详细描述（可选）' },
-        assignee: { type: 'string', description: '指派给谁（默认 default）' },
+        assignee: { type: 'string', description: 'Assign to (default: primary persona)' },
         priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'], description: '优先级（默认 normal）' },
         due_date: { type: 'string', description: '截止日期，ISO 格式如 2026-03-25（可选）' },
       },
@@ -354,7 +356,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_report_issue',
-    description: 'Report an issue (bug, anomaly, items needing attention). Issues appear on the dashboard Issue tab, awaiting handling.',
+    description: '报告问题：向user报告一个问题（bug、异常、需要关注的事项等）。问题会出现在监控看板的 Issue tab 上，等待user处理。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -486,7 +488,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_request_tool',
-    description: 'Request access to a tool (for workers/specialists). The request is logged to the wish pool, awaiting approval and grant.',
+    description: '向AI申请使用某个工具（工人/专员用）。申请会记录到许愿池，等待AI审批并 grant。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -498,7 +500,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_request_skill',
-    description: 'Request access to a Skill (for workers/specialists). The request is logged to the wish pool, awaiting approval.',
+    description: '向AI申请使用某个 Skill（工人/专员用）。申请会记录到许愿池，等待AI审批。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -531,7 +533,7 @@ const toolDefinitions = [
   },
   {
     name: 'symbiont_mcp_remove_backend',
-    description: '从 Gateway 移除第三方 MCP Server。内置后端（symbiont-core, symbiont-feishu）不可移除。',
+    description: '从 Gateway 移除第三方 MCP Server。内置后端（sia-core, sia-feishu）不可移除。',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -540,13 +542,27 @@ const toolDefinitions = [
       required: ['name'],
     },
   },
+  {
+    name: 'symbiont_evolve',
+    description: '自进化：在隔离环境中修改 Symbiont 代码。走完整开发流程（编码→测试→code review→合并→请求部署）。改动会通知user确认后部署。',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        description: {
+          type: 'string',
+          description: '要改进什么，为什么（越具体越好）',
+        },
+      },
+      required: ['description'],
+    },
+  },
 ]
 
 /**
  * Symbiont MCP Server — 让主 Agent 的 CC 能自主调用 Symbiont Core 的功能。
  */
 export async function createSymbiontMcpServer(
-  handler: SiaMcpToolHandler,
+  handler: SymbiontMcpToolHandler,
   logger: Logger,
 ): Promise<McpHttpServerHandle> {
   async function handleToolCall(name: string, args: Record<string, unknown> | undefined, sessionKey?: string) {
@@ -647,7 +663,7 @@ export async function createSymbiontMcpServer(
           args?.name as string,
           args?.schedule as string,
           args?.prompt as string,
-          { timezone: args?.timezone as string | undefined, oneShot: args?.one_shot as boolean | undefined },
+          { timezone: args?.timezone as string | undefined, oneShot: args?.one_shot as boolean | undefined, timeout: args?.timeout as number | undefined },
         )
         return Promise.resolve({ content: [{ type: 'text' as const, text: `定时任务已创建: ${result.id}（${args?.name}）` }] })
       }
@@ -802,7 +818,7 @@ export async function createSymbiontMcpServer(
             description: args?.description as string | undefined,
             severity: args?.severity as string | undefined,
             status: args?.status as string | undefined,
-            comment: commentText ? { author: 'system', content: commentText } : undefined,
+            comment: commentText ? { author: 'default', content: commentText } : undefined,
           },
         )
         if (!updated) return Promise.resolve({ content: [{ type: 'text' as const, text: '问题不存在' }], isError: true as const })
@@ -866,14 +882,14 @@ export async function createSymbiontMcpServer(
           args?.tool_name as string,
           args?.reason as string,
         )
-        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交工具申请: ${result.title} (ID: ${result.id}). Awaiting approval.` }] })
+        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交工具申请: ${result.title} (ID: ${result.id})。等待AI审批。` }] })
       }
       case 'symbiont_request_skill': {
         const result = handler.requestSkill(
           args?.skill_name as string,
           args?.reason as string,
         )
-        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交 Skill 申请: ${result.title} (ID: ${result.id}). Awaiting approval.` }] })
+        return Promise.resolve({ content: [{ type: 'text' as const, text: `已提交 Skill 申请: ${result.title} (ID: ${result.id})。等待AI审批。` }] })
       }
       case 'symbiont_gateway_backends': {
         const backends = handler.listGatewayBackends()
@@ -902,6 +918,14 @@ export async function createSymbiontMcpServer(
           return Promise.resolve({ content: [{ type: 'text' as const, text: `✅ 已移除后端 **${bName}**` }] })
         }
         return Promise.resolve({ content: [{ type: 'text' as const, text: `❌ 无法移除 "${bName}"（不存在或为内置后端）` }], isError: true as const })
+      }
+      case 'symbiont_evolve': {
+        const desc = String(args?.description ?? '')
+        if (!desc) return Promise.resolve({ content: [{ type: 'text' as const, text: '❌ description is required' }], isError: true as const })
+        const result = await handler.evolve(desc)
+        return { content: [{ type: 'text' as const, text: result.success
+          ? `✅ 进化成功：${result.result}\n已请求部署，等待确认。`
+          : `❌ 进化失败：${result.result}` }], ...(result.success ? {} : { isError: true as const }) }
       }
       default:
         return Promise.resolve({ content: [{ type: 'text' as const, text: `Unknown tool: ${name}` }], isError: true as const })

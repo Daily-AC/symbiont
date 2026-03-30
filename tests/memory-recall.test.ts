@@ -12,7 +12,7 @@ describe('Recall', () => {
   let dir: string
 
   before(() => {
-    dir = mkdtempSync(join(tmpdir(), 'symbiont-recall-'))
+    dir = mkdtempSync(join(tmpdir(), 'sia-recall-'))
     db = new MemoryDB(dir)
     // Seed cards
     db.addCard({ content: 'Feishu SDK returns stream for media downloads', scene: 'feishu integration', tags: ['feishu', 'media'], confidence: 0.9, source: [], connections: [] })

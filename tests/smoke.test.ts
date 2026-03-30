@@ -22,7 +22,7 @@ import { MemoryDB } from '../src/memory/db.ts'
 
 // ---- 测试隔离目录 ----
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const TEST_DIR = mkdtempSync(join(tmpdir(), 'symbiont-smoke-'))
+const TEST_DIR = mkdtempSync(join(tmpdir(), 'sia-smoke-'))
 const DATA_DIR = join(TEST_DIR, 'data')
 
 // ============================================================
@@ -49,14 +49,14 @@ describe('Smoke: SymbiontCore 启动', () => {
 
   it('persona 已正确加载', () => {
     assert.ok(core.persona.manifest)
-    assert.equal(core.persona.manifest!.name, 'echo')
+    assert.equal(core.persona.manifest!.name, 'default')
   })
 
   it('getSystemStatus 返回有效快照', () => {
     const status = core.getSystemStatus()
     assert.ok(status.uptime >= 0)
     assert.ok(typeof status.memoryMB === 'number')
-    assert.equal(status.persona, 'echo')
+    assert.equal(status.persona, 'default')
   })
 
   after(async () => {
@@ -73,7 +73,7 @@ describe('Smoke: SessionManager 持久化', () => {
   it('创建 session → 重新加载后能恢复', () => {
     // 创建并写入
     const mgr1 = new SessionManager(sessDir)
-    const session = mgr1.create('echo', 'test-key')
+    const session = mgr1.create('default', 'test-key')
     mgr1.updateCCSessionId(session.sessionId, 'cc-123')
 
     // 重新加载
@@ -81,13 +81,13 @@ describe('Smoke: SessionManager 持久化', () => {
     const reloaded = mgr2.get(session.sessionId)
     assert.ok(reloaded, '重新加载后应能找到 session')
     assert.equal(reloaded!.ccSessionId, 'cc-123')
-    assert.equal(reloaded!.personaPack, 'echo')
+    assert.equal(reloaded!.personaPack, 'default')
     assert.equal(reloaded!.state, 'active')
   })
 
   it('sleep 后重新加载仍为 sleeping', () => {
     const mgr1 = new SessionManager(sessDir)
-    const session = mgr1.create('echo', 'sleep-key')
+    const session = mgr1.create('default', 'sleep-key')
     mgr1.updateCCSessionId(session.sessionId, 'cc-sleep')
     mgr1.sleep(session.sessionId)
 
@@ -111,9 +111,9 @@ describe('Smoke: Router.stop() 优雅关闭', () => {
     })
 
     // 手动创建几个 session 来模拟 Router 的行为
-    const s1 = core.sessionManager.create('echo', 'key-1')
+    const s1 = core.sessionManager.create('default', 'key-1')
     core.sessionManager.updateCCSessionId(s1.sessionId, 'cc-1')
-    const s2 = core.sessionManager.create('echo', 'key-2')
+    const s2 = core.sessionManager.create('default', 'key-2')
     core.sessionManager.updateCCSessionId(s2.sessionId, 'cc-2')
 
     // 验证初始状态
@@ -145,9 +145,9 @@ describe('Smoke: 重启后 session 恢复', () => {
       userDir: join(__dirname, '..', 'user'),
     })
 
-    const s1 = core1.sessionManager.create('echo', 'feishu')
+    const s1 = core1.sessionManager.create('default', 'feishu')
     core1.sessionManager.updateCCSessionId(s1.sessionId, 'cc-feishu-1')
-    const s2 = core1.sessionManager.create('echo', 'terminal')
+    const s2 = core1.sessionManager.create('default', 'terminal')
     core1.sessionManager.updateCCSessionId(s2.sessionId, 'cc-terminal-1')
 
     // 模拟 stop
